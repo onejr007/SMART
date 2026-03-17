@@ -73,17 +73,11 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      - name: Write Firebase Service Account (jbakun-62239)
-        env:
-          FIREBASE_SERVICE_ACCOUNT_JBAKUN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JBAKUN_62239 }}
-        run: |
-          echo "$FIREBASE_SERVICE_ACCOUNT_JBAKUN" > $HOME/firebase-sa-jbakun.json
-          chmod 600 $HOME/firebase-sa-jbakun.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-sa-jbakun.json" >> $GITHUB_ENV
-
       - name: Deploy Database Rules
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN_JBAKUN }}
         run: |
-          firebase deploy --only database --project jbakun-62239 --non-interactive
+          firebase deploy --only database --project jbakun-62239 --token "$FIREBASE_TOKEN" --non-interactive
 
   deploy-hosting:
     name: Deploy Hosting (smart-34bcc)
@@ -109,17 +103,11 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      - name: Write Firebase Service Account (smart-34bcc)
-        env:
-          FIREBASE_SERVICE_ACCOUNT_SMART: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SMART_34BCC }}
-        run: |
-          echo "$FIREBASE_SERVICE_ACCOUNT_SMART" > $HOME/firebase-sa-smart.json
-          chmod 600 $HOME/firebase-sa-smart.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-sa-smart.json" >> $GITHUB_ENV
-
       - name: Deploy Hosting
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN_SMART }}
         run: |
-          firebase deploy --only hosting --project smart-34bcc --non-interactive
+          firebase deploy --only hosting --project smart-34bcc --token "$FIREBASE_TOKEN" --non-interactive
 
       - name: Deployment Summary
         run: |

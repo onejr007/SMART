@@ -344,14 +344,23 @@ Tambahkan secrets berikut:
    - `VITE_FIREBASE_MEASUREMENT_ID`
    - `VITE_FIREBASE_DATABASE_URL`
 
-2. **Service Accounts (untuk deploy):**
-   - `FIREBASE_SERVICE_ACCOUNT_JBAKUN_62239` - Service account JSON dari project jbakun-62239
-   - `FIREBASE_SERVICE_ACCOUNT_SMART_34BCC` - Service account JSON dari project smart-34bcc
+2. **Firebase CI Tokens (untuk deploy):**
+   - `FIREBASE_TOKEN_JBAKUN` - Token untuk project jbakun-62239
+   - `FIREBASE_TOKEN_SMART` - Token untuk project smart-34bcc
 
-**Cara mendapatkan Service Account:**
-1. Firebase Console → Project Settings → Service accounts
-2. Klik "Generate new private key"
-3. Copy isi file JSON ke GitHub Secret
+**Cara mendapatkan Firebase Token:**
+
+```bash
+# Login ke Firebase CLI
+firebase login:ci
+
+# Copy token yang muncul
+# Paste ke GitHub Secret
+```
+
+**PENTING:** Kamu perlu generate 2 tokens terpisah:
+1. Login dengan akun yang punya `jbakun-62239` → Save sebagai `FIREBASE_TOKEN_JBAKUN`
+2. Login dengan akun yang punya `smart-34bcc` → Save sebagai `FIREBASE_TOKEN_SMART`
 
 **Workflow:**
 1. Push ke `main` branch
