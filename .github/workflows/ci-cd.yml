@@ -92,9 +92,9 @@ jobs:
 
       - name: Write Firebase Service Account
         env:
-          FIREBASE_SERVICE_ACCOUNT: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SMART_34BCC }}'
+          FIREBASE_SERVICE_ACCOUNT_B64: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SMART_34BCC_B64 }}'
         run: |
-          echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/firebase-sa.json
+          echo "$FIREBASE_SERVICE_ACCOUNT_B64" | base64 --decode > $HOME/firebase-sa.json
           chmod 600 $HOME/firebase-sa.json
 
       - name: Write Functions Env File
