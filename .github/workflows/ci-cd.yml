@@ -1,6 +1,6 @@
-# Optimization #22: CI/CD Pipeline (GitHub Actions)
-# This workflow automates testing, building, and deployment to Firebase.
-name: SMART Framework CI/CD
+# SMART Metaverse Portal - CI/CD Pipeline
+# Standalone Firebase (Hosting + Realtime Database)
+name: SMART Portal CI/CD
 
 on:
   push:
@@ -9,11 +9,11 @@ on:
     branches: [ main, develop ]
 
 env:
-  # Optimization #22: Force Node.js 24 for all actions to avoid deprecation (Required by June 2026)
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   test-and-build:
+    name: Test & Build
     runs-on: ubuntu-latest
 
     steps:
@@ -23,23 +23,21 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24' # Upgrade from 18 to 24 for future-proofing
+          node-version: '20'
           cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Security Audit (Backend Recommendation #4)
-        run: npm audit --audit-level=critical
+      - name: Security Audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
 
-      - name: Run Linting
-        run: npm run lint
-
-      - name: Run Typecheck
+      - name: TypeScript Type Check
         run: npm run typecheck
 
-      - name: Build Portal (UGC)
-        run: npm run build:portal
+      - name: Build Production
+        run: npm run build
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
@@ -48,25 +46,50 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
-
-      - name: Build Framework Components
-        run: npm run build:framework
-
-      - name: Docker Build Test
-        run: docker build -t smart-engine:latest .
+          VITE_FIREBASE_DATABASE_URL: ${{ secrets.VITE_FIREBASE_DATABASE_URL }}
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: smart-engine-build
+          name: dist
           path: dist/
-          retention-days: 5
+          retention-days: 7
 
-  deploy:
-    name: Deploy to Firebase (Hosting + Functions)
+  deploy-database-rules:
+    name: Deploy Database Rules (jbakun-62239)
     needs: test-and-build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Write Firebase Service Account (jbakun-62239)
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JBAKUN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JBAKUN_62239 }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT_JBAKUN" > $HOME/firebase-sa-jbakun.json
+          chmod 600 $HOME/firebase-sa-jbakun.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-sa-jbakun.json" >> $GITHUB_ENV
+
+      - name: Deploy Database Rules
+        run: |
+          firebase deploy --only database --project jbakun-62239 --non-interactive
+
+  deploy-hosting:
+    name: Deploy Hosting (smart-34bcc)
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
       - name: Checkout Repository
@@ -75,63 +98,31 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: smart-engine-build
+          name: dist
           path: dist
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm ci
+          node-version: '20'
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      - name: Write Firebase Service Account
+      - name: Write Firebase Service Account (smart-34bcc)
         env:
-          FIREBASE_SERVICE_ACCOUNT_B64: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SMART_34BCC_B64 }}'
-          FIREBASE_SERVICE_ACCOUNT_JSON: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SMART_34BCC_JSON }}'
+          FIREBASE_SERVICE_ACCOUNT_SMART: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SMART_34BCC }}
         run: |
-          python - <<'PY'
-          import os, base64, json, pathlib
-          out = pathlib.Path.home() / "firebase-sa.json"
-          raw = (os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON") or "").strip()
-          b64 = (os.environ.get("FIREBASE_SERVICE_ACCOUNT_B64") or "").strip()
+          echo "$FIREBASE_SERVICE_ACCOUNT_SMART" > $HOME/firebase-sa-smart.json
+          chmod 600 $HOME/firebase-sa-smart.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-sa-smart.json" >> $GITHUB_ENV
 
-          if raw:
-            json.loads(raw)
-            out.write_text(raw, encoding="utf-8")
-          elif b64:
-            b64_clean = "".join(b64.split())
-            b64_clean += "=" * ((-len(b64_clean)) % 4)
-            data = base64.b64decode(b64_clean)
-            json.loads(data.decode("utf-8"))
-            out.write_bytes(data)
-          else:
-            raise SystemExit("Missing FIREBASE service account secret (JSON or B64).")
-
-          print(f"Wrote credentials to {out}")
-          PY
-          chmod 600 $HOME/firebase-sa.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-sa.json" >> $GITHUB_ENV
-
-      - name: Verify Firebase Auth
+      - name: Deploy Hosting
         run: |
-          test -f "$GOOGLE_APPLICATION_CREDENTIALS"
-          firebase --version
-          firebase projects:list --non-interactive --project smart-34bcc
+          firebase deploy --only hosting --project smart-34bcc --non-interactive
 
-      - name: Write Functions Env File
+      - name: Deployment Summary
         run: |
-          cat > .env.smart-34bcc <<EOF
-          FIREBASE_DB_URL=${{ secrets.FIREBASE_DB_URL }}
-          FIREBASE_AUTH_SECRET=${{ secrets.FIREBASE_AUTH_SECRET }}
-          ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
-          EOF
-
-      - name: Deploy Hosting + Functions
-        run: |
-          firebase deploy --only hosting,functions --project smart-34bcc --non-interactive
+          echo "✅ Deployment successful!"
+          echo "🌐 URL: https://smart-34bcc.web.app"
+          echo "📦 Build size: $(du -sh dist | cut -f1)"

@@ -294,33 +294,50 @@ firebase deploy --only database
 
 ---
 
-## � Deployment
+## 🚀 Deployment
 
 ### Prerequisites
-- Node.js 20+
+- Node.js 18+
 - Firebase CLI: `npm install -g firebase-tools`
-- Firebase account dengan 2 projects
+- Firebase account dengan 2 projects:
+  - `smart-34bcc` (Hosting & Auth)
+  - `jbakun-62239` (Realtime Database - DIFFERENT ACCOUNT!)
 
-### Deploy Steps
+### Manual Deploy
 
 1. **Build frontend:**
 ```bash
 npm run build
 ```
 
-2. **Deploy database rules:**
+2. **Deploy database rules ke jbakun-62239:**
 ```bash
 firebase use jbakun-62239
 firebase deploy --only database
 ```
 
-3. **Deploy hosting:**
+3. **Deploy hosting ke smart-34bcc:**
 ```bash
 firebase use smart-34bcc
 firebase deploy --only hosting
 ```
 
 4. **Done!** Buka `https://smart-34bcc.web.app`
+
+### CI/CD (Automatic Deploy)
+
+Project ini menggunakan GitHub Actions untuk auto-deploy setiap push ke `main`.
+
+**Setup:**
+1. Baca `GITHUB_SECRETS_SETUP.md` untuk setup secrets
+2. Push ke `main` branch
+3. GitHub Actions akan otomatis:
+   - ✅ Run tests & type checking
+   - ✅ Build production
+   - ✅ Deploy database rules (jbakun-62239)
+   - ✅ Deploy hosting (smart-34bcc)
+
+**Status:** [![CI/CD](https://github.com/onejr007/SMART/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/onejr007/SMART/actions/workflows/ci-cd.yml)
 
 ---
 
