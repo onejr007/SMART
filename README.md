@@ -328,10 +328,34 @@ firebase deploy --only hosting
 
 Project ini menggunakan GitHub Actions untuk auto-deploy setiap push ke `main`.
 
-**Setup:**
-1. Baca `GITHUB_SECRETS_SETUP.md` untuk setup secrets
-2. Push ke `main` branch
-3. GitHub Actions akan otomatis:
+**Setup GitHub Secrets:**
+
+Buka: `https://github.com/onejr007/SMART/settings/secrets/actions`
+
+Tambahkan secrets berikut:
+
+1. **Firebase Config (untuk build):**
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
+   - `VITE_FIREBASE_MEASUREMENT_ID`
+   - `VITE_FIREBASE_DATABASE_URL`
+
+2. **Service Accounts (untuk deploy):**
+   - `FIREBASE_SERVICE_ACCOUNT_JBAKUN_62239` - Service account JSON dari project jbakun-62239
+   - `FIREBASE_SERVICE_ACCOUNT_SMART_34BCC` - Service account JSON dari project smart-34bcc
+
+**Cara mendapatkan Service Account:**
+1. Firebase Console → Project Settings → Service accounts
+2. Klik "Generate new private key"
+3. Copy isi file JSON ke GitHub Secret
+
+**Workflow:**
+1. Push ke `main` branch
+2. GitHub Actions akan otomatis:
    - ✅ Run tests & type checking
    - ✅ Build production
    - ✅ Deploy database rules (jbakun-62239)
