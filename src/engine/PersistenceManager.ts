@@ -29,7 +29,7 @@ export class PersistenceManager {
                 deletedAt: new Date().toISOString() 
             });
             logger.info(`Soft deleted item at ${path}`);
-        } catch (error) {
+        } catch (error: any) {
             logger.error(`Soft delete failed at ${path}:`, error);
             throw error;
         }
@@ -44,7 +44,7 @@ export class PersistenceManager {
         try {
             const result = await runTransaction(dbRef, updateFn);
             return result;
-        } catch (error) {
+        } catch (error: any) {
             logger.error(`Transaction failed at ${path}:`, error);
             throw error;
         }
@@ -68,7 +68,7 @@ export class PersistenceManager {
             await auditManager.log('GAME_SAVE', userId, { gameId: newGameRef.key, title, schema: playerSchema });
             eventBus.emit('db:saved', { id: newGameRef.key, title });
             return newGameRef.key;
-        } catch (error) {
+        } catch (error: any) {
             console.error("Database Save Error:", error);
             await auditManager.log('GAME_SAVE_FAILED', userId, { title, error: error.message }, 'failure');
             eventBus.emit('db:error', { operation: 'save', error });
@@ -88,7 +88,7 @@ export class PersistenceManager {
             });
             
             eventBus.emit('db:progress-saved', { userId, gameId });
-        } catch (error) {
+        } catch (error: any) {
             console.error("Progress Save Error:", error);
             eventBus.emit('db:error', { operation: 'save-progress', error });
             throw error;

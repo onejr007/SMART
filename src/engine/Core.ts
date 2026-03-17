@@ -180,15 +180,15 @@ export class Engine {
         this.sceneManager.addEntity(entity);
     }
 
-    public getScene(): THREE.Scene {
+    public getScene(): Scene {
         return this.scene;
     }
 
-    public getPhysicsWorld(): CANNON.World {
+    public getPhysicsWorld(): World {
         return this.physicsWorld;
     }
 
-    public getCamera(): THREE.PerspectiveCamera {
+    public getCamera(): PerspectiveCamera {
         return this.camera;
     }
 

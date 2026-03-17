@@ -120,7 +120,7 @@ export class Entity {
         return this.components.get(name) as T;
     }
 
-    private async loadModel(url: string, size?: THREE.Vector3) {
+    private async loadModel(url: string, size?: Vector3) {
         try {
             const model = await assetManager.loadModel(url);
             

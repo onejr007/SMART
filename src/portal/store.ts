@@ -19,7 +19,7 @@ interface Game {
     description: string;
     author: string;
     authorId?: string;
-    createdAt: string;
+    createdAt?: string;
     scene?: any[];
 }
 

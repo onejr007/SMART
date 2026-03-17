@@ -15,11 +15,14 @@ export default defineConfig({
     // Optimization #43: Asset Bundling Optimization (Manual Chunking)
     rollupOptions: {
       output: {
-        manualChunks: {
-          'three-vendor': ['three', 'three-stdlib'],
-          'react-vendor': ['react', 'react-dom'],
-          'cannon-vendor': ['cannon-es'],
-          'firebase-vendor': ['firebase/app', 'firebase/database'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('three')) return 'three-vendor';
+            if (id.includes('react')) return 'react-vendor';
+            if (id.includes('cannon')) return 'cannon-vendor';
+            if (id.includes('firebase')) return 'firebase-vendor';
+            return 'vendor';
+          }
         },
       },
     },

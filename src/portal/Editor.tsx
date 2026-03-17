@@ -70,13 +70,13 @@ const Editor: React.FC<EditorProps> = ({ onExit, currentUser }) => {
             
             // Only intersect objects that belong to entities (skip floor for now)
             const sceneMeshes = Array.from(engine.getScene().children).filter(
-                c => c.userData?.entity && c.userData.entity.name !== 'EditorFloor'
+                (c: THREE.Object3D) => c.userData?.entity && c.userData.entity.name !== 'EditorFloor'
             );
             
             // We need to raycast against the children of the Object3D containers
             const interactableMeshes: THREE.Object3D[] = [];
-            sceneMeshes.forEach(container => {
-                container.children.forEach(mesh => interactableMeshes.push(mesh));
+            sceneMeshes.forEach((container: THREE.Object3D) => {
+                container.children.forEach((mesh: THREE.Object3D) => interactableMeshes.push(mesh));
             });
 
             const intersects = raycaster.intersectObjects(interactableMeshes, true);

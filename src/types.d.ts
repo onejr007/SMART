@@ -1,0 +1,11 @@
+declare module 'msgpack5';
+declare module '*/utils/logger.js';
+declare module '*/utils/sanitizer.js';
+declare module '*/utils/binary-protocol.js';
+declare module '*/utils/relational-validator.js';
+declare module '*/utils/memoizer.js';
+declare module '*/utils/error-tracker.js';
+declare module '*/utils/cache-manager.js';
+declare module '*/utils/worker-pool.js';
+declare module '*/utils/secret-manager.js';
+declare module '*/utils/throttling-middleware.js';

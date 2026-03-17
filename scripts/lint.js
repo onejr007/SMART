@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const rootDir = process.cwd();
-const allowedMarkdown = new Set(['README.md']);
+const allowedMarkdown = new Set(['README.md', 'CONTRIBUTING_AI.md', '.agent-trigger.md']);
 const ignoredDirs = new Set(['node_modules', '.git', 'dist', '.ai-versions']);
 
 async function walk(dirPath) {
