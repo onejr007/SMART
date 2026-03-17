@@ -8,6 +8,10 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+env:
+  # Optimization #22: Force Node.js 24 for all actions to avoid deprecation (Required by June 2026)
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
@@ -19,7 +23,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '24' # Upgrade from 18 to 24 for future-proofing
           cache: 'npm'
 
       - name: Install Dependencies
