@@ -147,7 +147,7 @@ Berikut adalah status implementasi dari 50 rekomendasi di atas:
 - [x] #17 Database Migration System: Implementasi `migration-manager.js` untuk pelacakan skema DB.
 - [x] #18 Relational Data Integrity: Implementasi `RelationalValidator.js` untuk validasi referensi ID user.
 - [x] #21 Containerization (Docker): Implementasi `Dockerfile` dan `docker-compose.yml` untuk deployment yang konsisten.
-- [x] #22 CI/CD Pipeline: Implementasi GitHub Actions untuk pengujian dan build otomatis.
+- [x] #22 CI/CD Pipeline: Implementasi GitHub Actions untuk pengujian, build otomatis, dan deployment ke Firebase Hosting.
 - [x] #25 Resource Monitoring: Implementasi endpoint `/metrics` (Prometheus-style) pada `server.js`.
 - [x] #2 Secure Session Management: Migrasi ke HttpOnly Cookies untuk keamanan token session.
 - [x] #4 Dependency Audit Automation: Integrasi `npm audit` ke dalam pipeline CI/CD.

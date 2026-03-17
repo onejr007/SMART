@@ -1,5 +1,5 @@
 # Optimization #22: CI/CD Pipeline (GitHub Actions)
-# This workflow automates testing and building for every push or PR.
+# This workflow automates testing, building, and deployment to Firebase.
 name: SMART Framework CI/CD
 
 on:
@@ -49,3 +49,27 @@ jobs:
           name: smart-engine-build
           path: dist/
           retention-days: 5
+
+  deploy:
+    name: Deploy to Firebase Hosting
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: smart-engine-build
+          path: dist
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SMART_34BCC }}'
+          channelId: live
+          projectId: smart-34bcc
