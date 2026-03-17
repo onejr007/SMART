@@ -116,6 +116,13 @@ jobs:
           print(f"Wrote credentials to {out}")
           PY
           chmod 600 $HOME/firebase-sa.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-sa.json" >> $GITHUB_ENV
+
+      - name: Verify Firebase Auth
+        run: |
+          test -f "$GOOGLE_APPLICATION_CREDENTIALS"
+          firebase --version
+          firebase projects:list --non-interactive --project smart-34bcc
 
       - name: Write Functions Env File
         run: |
@@ -126,7 +133,5 @@ jobs:
           EOF
 
       - name: Deploy Hosting + Functions
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: $HOME/firebase-sa.json
         run: |
           firebase deploy --only hosting,functions --project smart-34bcc --non-interactive

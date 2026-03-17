@@ -403,6 +403,8 @@ Cara membuat base64 satu-baris:
   - Linux/macOS: `export GOOGLE_APPLICATION_CREDENTIALS=/path/firebase-sa.json`
 - Deploy:
   - `firebase deploy --only hosting,functions --project smart-34bcc`
+- Jika masih error autentikasi, cek dulu:
+  - `firebase projects:list --project smart-34bcc`
 
 ## 🎨 Component Standards
 
