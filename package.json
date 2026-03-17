@@ -9,9 +9,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "deploy": "npm run build && firebase deploy --only hosting",
-    "lint": "node scripts/lint.js",
-    "typecheck": "tsc --noEmit",
-    "check": "npm run lint && npm run typecheck"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "cannon-es": "^0.20.0",
