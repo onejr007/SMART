@@ -4,9 +4,9 @@
  */
 
 export const apiDocumentation = {
-  version: '2.1.0',
-  title: 'AI Web Framework API',
-  description: 'RESTful API untuk AI-driven web component generation',
+  version: '1.0.0',
+  title: 'SMART Metaverse API',
+  description: 'RESTful API untuk Portal Game & Multiverse Engine',
   
   endpoints: {
     health: {

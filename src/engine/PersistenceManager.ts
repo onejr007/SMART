@@ -3,7 +3,6 @@ import { ref, set, get, push, child, runTransaction } from 'firebase/database';
 import { SceneManager } from './SceneManager';
 import { eventBus } from './EventBus';
 import { auditManager } from './AuditManager';
-import logger from '../../utils/logger.js';
 
 export class PersistenceManager {
     private static instance: PersistenceManager;
@@ -28,9 +27,9 @@ export class PersistenceManager {
                 isDeleted: true, 
                 deletedAt: new Date().toISOString() 
             });
-            logger.info(`Soft deleted item at ${path}`);
+            console.info(`Soft deleted item at ${path}`);
         } catch (error: any) {
-            logger.error(`Soft delete failed at ${path}:`, error);
+            console.error(`Soft delete failed at ${path}:`, error);
             throw error;
         }
     }
@@ -45,7 +44,7 @@ export class PersistenceManager {
             const result = await runTransaction(dbRef, updateFn);
             return result;
         } catch (error: any) {
-            logger.error(`Transaction failed at ${path}:`, error);
+            console.error(`Transaction failed at ${path}:`, error);
             throw error;
         }
     }

@@ -15,6 +15,9 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import logger from './utils/logger.js';
 import apiRoutes from './api/routes.js';
 import { startGrpcServer } from './grpc/server.js';
@@ -22,6 +25,9 @@ import { globalErrorHandler, NotFoundError } from './api/errorHandler.js';
 import { sanitizationMiddleware } from './utils/sanitizer.js';
 import { BinaryProtocol } from './utils/binary-protocol.js';
 import { throttlingMiddleware } from './utils/throttling-middleware.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = createServer(app);
@@ -63,10 +69,10 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://www.gstatic.com", "https://apis.google.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://www.gstatic.com", "https://apis.google.com", "https://www.googletagmanager.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "https://firebasestorage.googleapis.com"],
-      connectSrc: ["'self'", "ws:", "wss:", "https://*.firebaseio.com", "https://*.googleapis.com"],
+      connectSrc: ["'self'", "ws:", "wss:", "https://*.firebaseio.com", "https://*.firebasedatabase.app", "https://*.googleapis.com", "https://www.google-analytics.com", "https://www.googletagmanager.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
@@ -102,14 +108,21 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(sanitizationMiddleware); // Database Recommendation #15
 
 // Static files with caching
-app.use(express.static('public', { maxAge: '1h' }));
+app.use(express.static('dist', { 
+  maxAge: '1h',
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store');
+    }
+  }
+}));
 app.use('/components', express.static('src/components', { maxAge: '5m' }));
 app.use('/pages', express.static('src/pages', { maxAge: '5m' }));
 
 // Headers
 app.use((req, res, next) => {
-  res.setHeader('X-AI-Framework', 'Trae-v2.0');
-  res.setHeader('X-Powered-By', 'AI-Agent');
+  res.setHeader('X-SMART-Engine', 'SMART-Metaverse');
+  res.setHeader('X-Powered-By', 'SMART-Engine');
   next();
 });
 
@@ -281,6 +294,19 @@ watcher.on('unlink', (path) => {
   broadcast({ type: 'reload', path, timestamp: Date.now() });
 });
 
+app.get('*', (req, res, next) => {
+  if (req.method !== 'GET') return next();
+  if (req.path.startsWith('/api') || req.path.startsWith('/metrics')) return next();
+
+  const accept = req.headers.accept || '';
+  if (!accept.includes('text/html')) return next();
+
+  const indexPath = path.join(__dirname, 'dist', 'index.html');
+  if (!fs.existsSync(indexPath)) return next();
+
+  res.sendFile(indexPath);
+});
+
 // 404 handler (Security Recommendation #10)
 app.use((req, res, next) => {
   next(new NotFoundError(`Can't find ${req.originalUrl} on this server!`));
@@ -316,7 +342,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log('╔════════════════════════════════════════════════════════╗');
   console.log('║                                                        ║');
-  console.log('║        🤖 AI Web Framework v3.0 - AUTONOMOUS          ║');
+  console.log('║       🎮 SMART METAVERSE ENGINE v1.0 - READY          ║');
   console.log('║                                                        ║');
   console.log('╚════════════════════════════════════════════════════════╝');
   console.log('');
@@ -345,7 +371,7 @@ server.listen(PORT, () => {
   console.log(`   GET  /api/versions/:type/:name - Version history`);
   console.log(`   POST /api/versions/restore    - Restore version`);
   console.log('');
-  console.log('🎯 Ready for AI Agent operations!');
+  console.log('🎯 Ready for SMART Metaverse operations!');
   console.log('');
 });
 

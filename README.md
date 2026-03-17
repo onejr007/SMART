@@ -1,17 +1,6 @@
-# AI Web Framework v2.1
+# SMART Metaverse Portal & Engine
 
-Framework web profesional yang dioptimalkan untuk AI Agent workflow. Dirancang untuk generasi kode 100% otomatis dengan performa tinggi, keamanan terjamin, dan monitoring real-time.
-
-## 🎯 Fitur Utama
-
-- **AI-Native Architecture** - Struktur dan API dirancang khusus untuk AI Agent
-- **High Performance** - Caching, rate limiting, dan optimasi performa
-- **Security Hardened** - Helmet, CORS, input validation, dan rate limiting
-- **Real-time Monitoring** - Metrics collection dan performance tracking
-- **Version Control** - Automatic versioning untuk setiap perubahan
-- **Batch Operations** - Generate multiple components/pages dalam satu request
-- **Hot Reload** - WebSocket-based hot reload untuk development
-- **Schema Validation** - Strict validation dengan Ajv untuk konsistensi
+Portal game profesional dan Multiverse Engine untuk game 3D berbasis web (Three.js + Cannon-es), lengkap dengan autentikasi, UGC editor, dan sistem browsing game.
 
 ## 🚀 Quick Start
 
@@ -19,11 +8,11 @@ Framework web profesional yang dioptimalkan untuk AI Agent workflow. Dirancang u
 # Install dependencies
 npm install
 
-# Start development server (API)
+# Start Metaverse Portal (Frontend)
 npm run dev
 
-# Start Metaverse Portal (Frontend)
-npm run dev:portal
+# Start API server (optional)
+npm run dev:api
 
 # Build for production
 npm run build
@@ -35,8 +24,8 @@ npm run build:portal
 npm run deploy
 ```
 
-API Server: `http://localhost:3000`  
-Metaverse Portal: `http://localhost:5173`
+Metaverse Portal: `http://localhost:5173`  
+API Server (optional): `http://localhost:3000`
 
 ## 🎮 Metaverse Engine & Portal
 

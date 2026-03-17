@@ -42,7 +42,7 @@ jobs:
         run: npm run build:portal
 
       - name: Build Framework Components
-        run: npm run build
+        run: npm run build:framework
 
       - name: Docker Build Test
         run: docker build -t smart-engine:latest .

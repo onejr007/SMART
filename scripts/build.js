@@ -11,9 +11,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function build() {
-  console.log('🚀 Building AI Web Framework (Production Mode)...');
+  console.log('🚀 Building SMART Metaverse Engine Framework Artifacts...');
   
-  const buildDir = path.join(process.cwd(), 'dist');
+  const buildDir = path.join(process.cwd(), 'dist-framework');
   const publicDir = path.join(process.cwd(), 'public');
   const srcDir = path.join(process.cwd(), 'src');
   const componentsDir = path.join(srcDir, 'components');
@@ -24,8 +24,11 @@ async function build() {
     await fs.rm(buildDir, { recursive: true, force: true });
     await fs.mkdir(buildDir, { recursive: true });
     
-    // Copy public files
-    await copyDirectory(publicDir, buildDir);
+    try {
+      await fs.access(publicDir);
+      await copyDirectory(publicDir, buildDir);
+    } catch {
+    }
     
     // Copy and obfuscate components (Optimization #39)
     try {
@@ -71,8 +74,8 @@ async function build() {
     // Generate build info
     const buildInfo = {
       timestamp: new Date().toISOString(),
-      version: '2.1.0-hardened',
-      framework: 'SMART AI Metaverse Engine',
+      version: '1.0.0',
+      framework: 'SMART Metaverse Engine',
       environment: 'production',
       features: ['obfuscated', 'compressed', 'optimized']
     };
@@ -115,7 +118,7 @@ app.listen(PORT, () => {
     
     console.log('✅ Build completed successfully!');
     console.log(`📁 Build output: ${buildDir}`);
-    console.log('🚀 Run: node dist/server.js to start production server');
+    console.log('🚀 Run: node dist-framework/server.js to start production server');
     
   } catch (error) {
     console.error('❌ Build failed:', error.message);

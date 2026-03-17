@@ -1,5 +1,5 @@
 import logger from './logger.js';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 
 /**
  * Foundation for Error Tracking and Distributed Tracing
@@ -19,7 +19,7 @@ class ErrorTracker {
      * @returns {string} traceId
      */
     captureError(error, context = {}) {
-        const traceId = context.traceId || uuidv4();
+        const traceId = context.traceId || uuid();
         
         const errorData = {
             traceId,
@@ -68,18 +68,12 @@ class ErrorTracker {
     }
 }
 
-// Simple UUID fallback if uuid package is not available
-if (typeof uuidv4 !== 'function') {
-    const fallbackUuid = () => {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    };
-    // Redefine uuidv4 for this instance
-    var uuid = fallbackUuid;
-} else {
-    var uuid = uuidv4;
-}
+const uuid = () => {
+    if (typeof randomUUID === 'function') return randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+};
 
 export const errorTracker = new ErrorTracker();
