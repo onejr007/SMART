@@ -1,8 +1,16 @@
 ╔════════════════════════════════════════════════════════╗
 ║                                                        ║
-║       ✅ RAILWAY CLI SUDAH TERINSTALL!                ║
+║       ✅ SEMUA SUDAH SIAP! FILES SUDAH DI-COMMIT!     ║
 ║                                                        ║
 ╚════════════════════════════════════════════════════════╝
+
+⚠️  KALAU KAMU SUDAH DEPLOY SEBELUMNYA DAN DAPAT ERROR:
+    "Cannot find module '/app/ai/context-manager.js'"
+    
+    DEPLOY ULANG dengan command:
+    railway up
+    
+    Lalu lanjut ke langkah 4 (set environment variables)
 
 📋 JALANKAN COMMAND INI SATU PER SATU:
 
