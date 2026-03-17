@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Web Framework - Dashboard</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="container">
+                <div class="brand">
+                    <h1>⚡ AI Web Framework v2.1</h1>
+                    <div class="status-badge">
+                        <div class="status-dot"></div>
+                        AI Agent Active
+                    </div>
+                </div>
+                <nav>
+                    <a href="/" class="active">Dashboard</a>
+                    <a href="/api/structure" target="_blank">Structure API</a>
+                    <a href="/docs" target="_blank">Docs</a>
+                </nav>
+            </div>
+        </header>
+        
+        <main class="main">
+            <div class="container dashboard-grid">
+                <!-- Sidebar Navigation -->
+                <aside class="sidebar">
+                    <ul class="sidebar-menu">
+                        <li><a href="#overview" class="active">Overview</a></li>
+                        <li><a href="#chat-agent" style="color: var(--primary-color);">💬 Chat with Agent</a></li>
+                        <li><a href="#generator">AI Generator</a></li>
+                        <li><a href="#logs">System Logs</a></li>
+                        <li><a href="#structure">Project Structure</a></li>
+                    </ul>
+                </aside>
+
+                <!-- Main Content -->
+                <div class="content-area">
+                    <section id="overview" class="card welcome-card">
+                        <h2>🤖 AI Command Center</h2>
+                        <p>Framework v2.1 - Production Ready with Enhanced Security & Performance</p>
+                        
+                        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem;">
+                            <div class="stat-item" style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; text-align: center;">
+                                <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Components</h4>
+                                <span id="stat-components" style="font-size: 1.5rem; color: var(--primary-color); font-weight: bold;">--</span>
+                            </div>
+                            <div class="stat-item" style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; text-align: center;">
+                                <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Pages</h4>
+                                <span id="stat-pages" style="font-size: 1.5rem; color: var(--secondary-color); font-weight: bold;">--</span>
+                            </div>
+                            <div class="stat-item" style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; text-align: center;">
+                                <h4 style="color: var(--text-secondary); font-size: 0.9rem;">System Status</h4>
+                                <span style="font-size: 1.5rem; color: var(--success-color); font-weight: bold;">ONLINE</span>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section id="chat-agent" class="card" style="display: block;">
+                        <h2>🤖 Autonomous Agent</h2>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                            Kirim instruksi di sini. Agent akan **secara otomatis** memodifikasi file codebase di latar belakang tanpa perlu konfirmasi manual.
+                        </p>
+                        <div id="chat-box" style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 1rem; height: 250px; overflow-y: auto; margin-bottom: 1rem; border: 1px solid var(--border-color); font-family: 'Fira Code', monospace; font-size: 0.85rem;">
+                            <div style="color: var(--success-color); margin-bottom: 0.5rem;">[SYSTEM] Autonomous Agent Online. Siap mengeksekusi instruksi.</div>
+                        </div>
+                        <form id="agent-chat-form" style="display: flex; gap: 0.5rem;">
+                            <select id="agent-target" style="width: auto; padding: 0.5rem; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px;">
+                                <option value="autonomous">🤖 Autonomous (Langsung Eksekusi)</option>
+                                <option value="Trae">💬 Trae IDE</option>
+                                <option value="Kiro">💬 Kiro IDE</option>
+                                <option value="Cursor">💬 Cursor</option>
+                                <option value="Qoder">💬 Qoder</option>
+                            </select>
+                            <input type="text" id="agent-message" placeholder="Contoh: 'Tolong tambahkan tombol login berwarna merah di halaman utama'..." style="flex: 1; padding: 0.5rem;" required>
+                            <button type="submit" style="padding: 0.5rem 1rem;">Kirim Instruksi</button>
+                        </form>
+                    </section>
+
+                    <section id="generator" class="card">
+                        <h2>⚡ Quick Generation</h2>
+                        <div class="generator-forms">
+                            <div class="form-group">
+                                <h3>Generate Component</h3>
+                                <form id="component-form">
+                                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                                        <input type="text" id="component-name" placeholder="Component Name (e.g., HeroSection)" required>
+                                        <select id="component-type">
+                                            <option value="ui">UI Component</option>
+                                            <option value="data">Data Component</option>
+                                            <option value="layout">Layout Component</option>
+                                        </select>
+                                    </div>
+                                    <textarea id="component-content" placeholder="Describe functionality or provide content..." rows="3"></textarea>
+                                    <button type="submit" style="width: 100%; margin-top: 1rem;">Execute Generation Protocol</button>
+                                </form>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section id="logs" class="terminal-window">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span style="margin-left: 10px; color: #666; font-size: 0.8rem;">system_monitor.exe</span>
+                        </div>
+                        <div class="terminal-content" id="terminal-logs">
+                            <!-- Logs will be injected here -->
+                            <div class="log-entry info"><span class="timestamp">[SYSTEM]</span> Dashboard initialized...</div>
+                            <div class="log-entry success"><span class="timestamp">[NETWORK]</span> Connected to AI Core...</div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="footer" style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.8rem;">
+            <p>AI WEB FRAMEWORK v2.1.0 | PRODUCTION READY | SECURITY HARDENED</p>
+        </footer>
+    </div>
+    
+    <script src="/js/hot-reload.js"></script>
+    <script src="/js/dashboard.js?v=5.0"></script>
+</body>
+</html>

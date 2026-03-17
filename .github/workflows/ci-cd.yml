@@ -1,0 +1,51 @@
+# Optimization #22: CI/CD Pipeline (GitHub Actions)
+# This workflow automates testing and building for every push or PR.
+name: SMART Framework CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Security Audit (Backend Recommendation #4)
+        run: npm audit --audit-level=critical
+
+      - name: Run Linting
+        run: npm run lint
+
+      - name: Run Typecheck
+        run: npm run typecheck
+
+      - name: Build Portal (UGC)
+        run: npm run build:portal
+
+      - name: Build Framework Components
+        run: npm run build
+
+      - name: Docker Build Test
+        run: docker build -t smart-engine:latest .
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: smart-engine-build
+          path: dist/
+          retention-days: 5
