@@ -1,8 +1,7 @@
 {
   "name": "smart-metaverse-portal",
-  "version": "1.0.0",
-  "description": "Professional Game Portal & Multiverse Engine for web-based 3D games",
-  "main": "index.js",
+  "version": "2.0.0",
+  "description": "Standalone Firebase Game Portal & Multiverse Engine for web-based 3D games",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -35,7 +34,7 @@
     "vite": "^8.0.0"
   },
   "engines": {
-    "node": "20"
+    "node": ">=18.0.0"
   },
   "keywords": [
     "game",
@@ -44,7 +43,11 @@
     "engine",
     "portal",
     "threejs",
-    "ugc"
+    "ugc",
+    "firebase",
+    "standalone",
+    "react",
+    "vite"
   ],
   "author": "AI Assistant",
   "license": "MIT",

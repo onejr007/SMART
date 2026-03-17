@@ -10,10 +10,9 @@ yarn-error.log*
 *.swp
 *.swo
 *~
-.ai-versions/
-reports/
-docs/
 dist/
 build/
 coverage/
 .nyc_output/
+.firebase/
+.cache/
