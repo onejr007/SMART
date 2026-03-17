@@ -384,10 +384,17 @@ Project ini terdiri dari 2 bagian:
   - `FIREBASE_AUTH_SECRET`
   - `ALLOWED_ORIGINS`
 - Untuk deploy otomatis dari GitHub Actions, set GitHub Secrets:
-  - `FIREBASE_SERVICE_ACCOUNT_SMART_34BCC_B64` (isi: base64 dari JSON service account)
+  - `FIREBASE_SERVICE_ACCOUNT_SMART_34BCC_JSON` (isi: raw JSON service account, disarankan)
+  - atau `FIREBASE_SERVICE_ACCOUNT_SMART_34BCC_B64` (isi: base64 satu-baris dari JSON)
   - `FIREBASE_DB_URL`
   - `FIREBASE_AUTH_SECRET`
   - `ALLOWED_ORIGINS`
+
+Cara membuat base64 satu-baris:
+- Windows PowerShell:
+  - `[Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\path\firebase-sa.json"))`
+- Linux/macOS:
+  - `base64 -w 0 firebase-sa.json`
 
 ### Deploy dari lokal (tanpa login interaktif)
 - Buat service account untuk project `smart-34bcc` dan download JSON key.

@@ -93,8 +93,28 @@ jobs:
       - name: Write Firebase Service Account
         env:
           FIREBASE_SERVICE_ACCOUNT_B64: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SMART_34BCC_B64 }}'
+          FIREBASE_SERVICE_ACCOUNT_JSON: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SMART_34BCC_JSON }}'
         run: |
-          echo "$FIREBASE_SERVICE_ACCOUNT_B64" | base64 --decode > $HOME/firebase-sa.json
+          python - <<'PY'
+          import os, base64, json, pathlib
+          out = pathlib.Path.home() / "firebase-sa.json"
+          raw = (os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON") or "").strip()
+          b64 = (os.environ.get("FIREBASE_SERVICE_ACCOUNT_B64") or "").strip()
+
+          if raw:
+            json.loads(raw)
+            out.write_text(raw, encoding="utf-8")
+          elif b64:
+            b64_clean = "".join(b64.split())
+            b64_clean += "=" * ((-len(b64_clean)) % 4)
+            data = base64.b64decode(b64_clean)
+            json.loads(data.decode("utf-8"))
+            out.write_bytes(data)
+          else:
+            raise SystemExit("Missing FIREBASE service account secret (JSON or B64).")
+
+          print(f"Wrote credentials to {out}")
+          PY
           chmod 600 $HOME/firebase-sa.json
 
       - name: Write Functions Env File
