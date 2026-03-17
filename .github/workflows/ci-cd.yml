@@ -97,15 +97,13 @@ jobs:
           echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/firebase-sa.json
           chmod 600 $HOME/firebase-sa.json
 
-      - name: Configure Firebase Runtime Config
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: $HOME/firebase-sa.json
+      - name: Write Functions Env File
         run: |
-          firebase functions:config:set \
-            smart.firebase_db_url="${{ secrets.FIREBASE_DB_URL }}" \
-            smart.firebase_auth_secret="${{ secrets.FIREBASE_AUTH_SECRET }}" \
-            smart.allowed_origins="${{ secrets.ALLOWED_ORIGINS }}" \
-            --project smart-34bcc
+          cat > .env.smart-34bcc <<EOF
+          FIREBASE_DB_URL=${{ secrets.FIREBASE_DB_URL }}
+          FIREBASE_AUTH_SECRET=${{ secrets.FIREBASE_AUTH_SECRET }}
+          ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
+          EOF
 
       - name: Deploy Hosting + Functions
         env:

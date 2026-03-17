@@ -9,17 +9,6 @@ import apiRoutes from './api/routes.js';
 import { sanitizationMiddleware } from './utils/sanitizer.js';
 import { globalErrorHandler, NotFoundError } from './api/errorHandler.js';
 
-const cfg = typeof functions.config === 'function' ? functions.config() : {};
-if (!process.env.FIREBASE_DB_URL && cfg?.smart?.firebase_db_url) {
-  process.env.FIREBASE_DB_URL = cfg.smart.firebase_db_url;
-}
-if (!process.env.FIREBASE_AUTH_SECRET && cfg?.smart?.firebase_auth_secret) {
-  process.env.FIREBASE_AUTH_SECRET = cfg.smart.firebase_auth_secret;
-}
-if (!process.env.ALLOWED_ORIGINS && cfg?.smart?.allowed_origins) {
-  process.env.ALLOWED_ORIGINS = cfg.smart.allowed_origins;
-}
-
 const app = express();
 
 app.use(helmet({
@@ -74,4 +63,3 @@ app.use((req, res, next) => {
 app.use(globalErrorHandler);
 
 export const api = functions.https.onRequest(app);
-

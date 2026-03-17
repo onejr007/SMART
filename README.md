@@ -379,10 +379,10 @@ Project ini terdiri dari 2 bagian:
 - Backend tidak perlu server terpisah (tidak ada Cloud Run).
 - Hosting sudah dikonfigurasi me-rewrite `/api/**` dan `/metrics` ke Firebase Function `api` melalui `firebase.json`.
 - Variabel `FIREBASE_DB_URL` dan `FIREBASE_AUTH_SECRET` tetap **server-side only**.
-- Backend membaca secret dari Firebase Functions Runtime Config:
-  - `smart.firebase_db_url`
-  - `smart.firebase_auth_secret`
-  - `smart.allowed_origins`
+- Backend membaca konfigurasi dari environment variables Functions:
+  - `FIREBASE_DB_URL`
+  - `FIREBASE_AUTH_SECRET`
+  - `ALLOWED_ORIGINS`
 - Untuk deploy otomatis dari GitHub Actions, set GitHub Secrets:
   - `FIREBASE_SERVICE_ACCOUNT_SMART_34BCC`
   - `FIREBASE_DB_URL`
