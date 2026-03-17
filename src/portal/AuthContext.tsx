@@ -1,5 +1,14 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { useStore, UserRole } from './store';
+import { auth, database } from '../firebase';
+import { 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    signOut,
+    onAuthStateChanged,
+    updateProfile
+} from 'firebase/auth';
+import { ref, set, get } from 'firebase/database';
 
 interface User {
     uid: string;
@@ -27,65 +36,90 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    // Optimization #45: Global State Optimization (Zustand)
     const { user, loading, setUser, setLoading, logout: storeLogout } = useStore();
 
     useEffect(() => {
-        // Check localStorage untuk auto-login
-        const savedUser = localStorage.getItem('smart_user');
-        if (savedUser) {
-            try {
-                setUser(JSON.parse(savedUser));
-            } catch (e) {
-                localStorage.removeItem('smart_user');
+        // Listen to Firebase Auth state changes
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                // User is signed in, get additional data from database
+                const userRef = ref(database, `users/${firebaseUser.uid}`);
+                const snapshot = await get(userRef);
+                const userData = snapshot.val();
+                
+                setUser({
+                    uid: firebaseUser.uid,
+                    email: firebaseUser.email || '',
+                    displayName: firebaseUser.displayName || userData?.displayName || '',
+                    role: (userData?.role as UserRole) || UserRole.PLAYER
+                });
+            } else {
+                // User is signed out
+                setUser(null);
             }
-        }
-        setLoading(false);
-    }, [setUser, setLoading]);
-
-    const normalizeUser = (raw: any): User => {
-        const roleValues = Object.values(UserRole) as string[];
-        const role = roleValues.includes(raw?.role) ? (raw.role as UserRole) : UserRole.PLAYER;
-        return {
-            uid: String(raw?.uid || ''),
-            email: String(raw?.email || ''),
-            displayName: String(raw?.displayName || ''),
-            role
-        };
-    };
-
-    const signup = async (email: string, password: string, displayName: string) => {
-        const res = await fetch('/api/v1/portal/auth/signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ email, password, displayName })
+            setLoading(false);
         });
 
-        const data = await res.json().catch(() => null);
-        if (!res.ok) {
-            throw new Error(data?.error || 'Failed to create user');
-        }
+        return () => unsubscribe();
+    }, [setUser, setLoading]);
 
-        setUser(normalizeUser(data.user));
+    const signup = async (email: string, password: string, displayName: string) => {
+        try {
+            // Create user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const firebaseUser = userCredential.user;
+
+            // Update display name
+            await updateProfile(firebaseUser, { displayName });
+
+            // Save user data to Realtime Database
+            const userRef = ref(database, `users/${firebaseUser.uid}`);
+            await set(userRef, {
+                uid: firebaseUser.uid,
+                email: email,
+                displayName: displayName,
+                role: UserRole.PLAYER,
+                createdAt: new Date().toISOString()
+            });
+
+            setUser({
+                uid: firebaseUser.uid,
+                email: email,
+                displayName: displayName,
+                role: UserRole.PLAYER
+            });
+        } catch (error: any) {
+            throw new Error(error.message || 'Failed to create user');
+        }
     };
 
     const login = async (email: string, password: string) => {
-        const res = await fetch('/api/v1/portal/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ email, password })
-        });
-        const data = await res.json().catch(() => null);
-        if (!res.ok) {
-            throw new Error(data?.error || 'Login failed');
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const firebaseUser = userCredential.user;
+
+            // Get user data from database
+            const userRef = ref(database, `users/${firebaseUser.uid}`);
+            const snapshot = await get(userRef);
+            const userData = snapshot.val();
+
+            if (!userData) {
+                throw new Error('User data not found');
+            }
+
+            setUser({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email || '',
+                displayName: firebaseUser.displayName || userData.displayName || '',
+                role: (userData.role as UserRole) || UserRole.PLAYER
+            });
+        } catch (error: any) {
+            throw new Error(error.message || 'Login failed');
         }
-        setUser(normalizeUser(data.user));
     };
 
     const logout = async () => {
-        await fetch('/api/v1/portal/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => undefined);
+        await signOut(auth);
         storeLogout();
     };
 

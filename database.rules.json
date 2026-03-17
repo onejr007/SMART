@@ -1,0 +1,34 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "games": {
+      ".read": true,
+      "$gameId": {
+        ".write": "auth != null"
+      }
+    },
+    "user_game_data": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "leaderboards": {
+      ".read": true,
+      "$gameId": {
+        "$uid": {
+          ".write": "auth != null && auth.uid == $uid"
+        }
+      }
+    },
+    "audit_logs": {
+      ".read": false,
+      ".write": "auth != null"
+    }
+  }
+}

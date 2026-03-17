@@ -1,4 +1,6 @@
 import { eventBus } from './EventBus';
+import { database, auth } from '../firebase';
+import { ref, set, get, query, orderByChild, limitToLast } from 'firebase/database';
 
 export interface LeaderboardEntry {
     userId: string;
@@ -23,12 +25,32 @@ export class LeaderboardManager {
      */
     public async submitScore(gameId: string, userId: string, score: number) {
         try {
-            await fetch(`/api/v1/portal/leaderboards/${encodeURIComponent(gameId)}/submit`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ score })
-            });
+            const user = auth.currentUser;
+            if (!user) {
+                console.warn('Cannot submit score: user not authenticated');
+                return;
+            }
+
+            // Check if user already has a score
+            const userScoreRef = ref(database, `leaderboards/${gameId}/${user.uid}`);
+            const snapshot = await get(userScoreRef);
+            
+            if (snapshot.exists()) {
+                const existingScore = snapshot.val().score;
+                if (existingScore >= score) {
+                    // Don't update if existing score is higher
+                    return;
+                }
+            }
+
+            // Save new score
+            const entry: LeaderboardEntry = {
+                userId: user.uid,
+                score,
+                timestamp: new Date().toISOString()
+            };
+
+            await set(userScoreRef, entry);
             eventBus.emit('leaderboard:submitted', { gameId, userId, score });
         } catch (error) {
             console.error("Leaderboard Submit Error:", error);
@@ -40,13 +62,20 @@ export class LeaderboardManager {
      */
     public async getTopScores(gameId: string, limit: number = 10): Promise<LeaderboardEntry[]> {
         try {
-            const res = await fetch(`/api/v1/portal/leaderboards/${encodeURIComponent(gameId)}?limit=${encodeURIComponent(String(limit))}`, {
-                method: 'GET',
-                credentials: 'include'
-            });
-            const data = await res.json().catch(() => []);
-            if (!res.ok) return [];
-            return data as LeaderboardEntry[];
+            const leaderboardRef = ref(database, `leaderboards/${gameId}`);
+            const snapshot = await get(leaderboardRef);
+            
+            if (!snapshot.exists()) {
+                return [];
+            }
+
+            const data = snapshot.val();
+            const entries: LeaderboardEntry[] = Object.values(data)
+                .filter((entry: any) => entry && typeof entry.score === 'number')
+                .sort((a: any, b: any) => b.score - a.score)
+                .slice(0, limit);
+
+            return entries;
         } catch (error) {
             console.error("Leaderboard Fetch Error:", error);
             return [];

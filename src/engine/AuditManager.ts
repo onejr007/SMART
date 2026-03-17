@@ -1,3 +1,6 @@
+import { database, auth } from '../firebase';
+import { ref, push, set } from 'firebase/database';
+
 export interface AuditLog {
     timestamp: string;
     action: string;
@@ -28,12 +31,15 @@ class AuditManager {
         };
 
         try {
-            await fetch('/api/v1/portal/audit', {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, metadata, status })
-            });
+            const user = auth.currentUser;
+            if (!user) {
+                console.warn('Cannot log audit: user not authenticated');
+                return;
+            }
+
+            const auditLogsRef = ref(database, 'audit_logs');
+            const newLogRef = push(auditLogsRef);
+            await set(newLogRef, auditLog);
         } catch (error) {
             console.error("Failed to write audit log:", error);
         }

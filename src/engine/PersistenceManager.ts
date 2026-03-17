@@ -1,6 +1,8 @@
 import { SceneManager } from './SceneManager';
 import { eventBus } from './EventBus';
 import { auditManager } from './AuditManager';
+import { database, auth } from '../firebase';
+import { ref, push, set, get, query, orderByChild } from 'firebase/database';
 
 export class PersistenceManager {
     private static instance: PersistenceManager;
@@ -14,37 +16,40 @@ export class PersistenceManager {
         return PersistenceManager.instance;
     }
 
-    private async jsonRequest<T>(url: string, init?: RequestInit): Promise<T> {
-        const res = await fetch(url, {
-            credentials: 'include',
-            ...init,
-            headers: {
-                'Content-Type': 'application/json',
-                ...(init?.headers || {})
-            }
-        });
-        const data = await res.json().catch(() => null);
-        if (!res.ok) {
-            const message = (data as any)?.error || `Request failed (${res.status})`;
-            throw new Error(message);
+    private getCurrentUser() {
+        const user = auth.currentUser;
+        if (!user) {
+            throw new Error('User not authenticated');
         }
-        return data as T;
+        return user;
     }
 
     public async saveGame(userId: string, title: string, sceneManager: SceneManager, playerSchema?: any) {
         try {
-            const payload = await this.jsonRequest<{ id: string }>('/api/v1/portal/games', {
-                method: 'POST',
-                body: JSON.stringify({
-                    title,
-                    scene: sceneManager.toJSON(),
-                    playerSchema
-                })
-            });
+            const user = this.getCurrentUser();
             
-            await auditManager.log('GAME_SAVE', userId, { gameId: payload.id, title, schema: playerSchema });
-            eventBus.emit('db:saved', { id: payload.id, title });
-            return payload.id;
+            // Create game data
+            const gameData = {
+                title,
+                description: 'A user generated world built in SMART Engine',
+                author: user.displayName || 'Anonymous',
+                authorId: user.uid,
+                createdAt: new Date().toISOString(),
+                version: '2.1',
+                scene: sceneManager.toJSON(),
+                playerSchema: playerSchema || { level: 1, coins: 0 }
+            };
+
+            // Save to Firebase Realtime Database
+            const gamesRef = ref(database, 'games');
+            const newGameRef = push(gamesRef);
+            await set(newGameRef, gameData);
+            
+            const gameId = newGameRef.key!;
+            
+            await auditManager.log('GAME_SAVE', userId, { gameId, title, schema: playerSchema });
+            eventBus.emit('db:saved', { id: gameId, title });
+            return gameId;
         } catch (error: any) {
             console.error("Database Save Error:", error);
             await auditManager.log('GAME_SAVE_FAILED', userId, { title, error: error.message }, 'failure');
@@ -58,9 +63,12 @@ export class PersistenceManager {
      */
     public async saveUserProgress(userId: string, gameId: string, progressData: any) {
         try {
-            await this.jsonRequest('/api/v1/portal/user_game_data/' + encodeURIComponent(gameId), {
-                method: 'PUT',
-                body: JSON.stringify({ progressData })
+            const user = this.getCurrentUser();
+            
+            const progressRef = ref(database, `user_game_data/${user.uid}/${gameId}`);
+            await set(progressRef, {
+                ...progressData,
+                lastUpdated: new Date().toISOString()
             });
             
             eventBus.emit('db:progress-saved', { userId, gameId });
@@ -77,11 +85,14 @@ export class PersistenceManager {
      */
     public async loadUserProgress(userId: string, gameId: string): Promise<any> {
         try {
-            const progress = await this.jsonRequest<any>('/api/v1/portal/user_game_data/' + encodeURIComponent(gameId), {
-                method: 'GET'
-            }).catch(() => null);
-
-            if (progress) return progress;
+            const user = this.getCurrentUser();
+            
+            const progressRef = ref(database, `user_game_data/${user.uid}/${gameId}`);
+            const snapshot = await get(progressRef);
+            
+            if (snapshot.exists()) {
+                return snapshot.val();
+            }
 
             // Jika tidak ada progres, ambil default schema dari game
             const gameData = await this.loadGame(gameId);
@@ -94,7 +105,19 @@ export class PersistenceManager {
 
     public async loadGame(gameId: string): Promise<any> {
         try {
-            const data = await this.jsonRequest<any>('/api/v1/portal/games/' + encodeURIComponent(gameId), { method: 'GET' });
+            const gameRef = ref(database, `games/${gameId}`);
+            const snapshot = await get(gameRef);
+            
+            if (!snapshot.exists()) {
+                throw new Error('Game not found');
+            }
+            
+            const data = { id: gameId, ...snapshot.val() };
+            
+            if (data.isDeleted) {
+                throw new Error('Game not found');
+            }
+            
             eventBus.emit('db:loaded', { id: gameId, data });
             return data;
         } catch (error) {
@@ -106,8 +129,24 @@ export class PersistenceManager {
 
     public async listGames(): Promise<any[]> {
         try {
-            const games = await this.jsonRequest<any[]>('/api/v1/portal/games', { method: 'GET' });
-            return games || [];
+            const gamesRef = ref(database, 'games');
+            const snapshot = await get(gamesRef);
+            
+            if (!snapshot.exists()) {
+                return [];
+            }
+            
+            const gamesData = snapshot.val();
+            const games = Object.keys(gamesData)
+                .map(id => ({ id, ...gamesData[id] }))
+                .filter(game => !game.isDeleted)
+                .sort((a, b) => {
+                    const dateA = new Date(a.createdAt || 0).getTime();
+                    const dateB = new Date(b.createdAt || 0).getTime();
+                    return dateB - dateA;
+                });
+            
+            return games;
         } catch (error) {
             console.error("Database List Error:", error);
             return [];
