@@ -4,24 +4,47 @@ Portal game profesional dan Multiverse Engine untuk game 3D berbasis web (Three.
 
 ## 🚀 Quick Start
 
+### Development (Local)
+
 ```bash
 # Install dependencies
 npm install
 
-# Start Metaverse Portal + API (Single Server)
+# Start Metaverse Portal + API (Single Server - Monolitik)
 npm run dev
-
-# Build for production
-npm run build
-
-# Build Portal for production
-npm run build:portal
-
-# Deploy Portal to Firebase
-npm run deploy
 ```
 
-Metaverse Portal + API: `http://localhost:3000`
+Buka: `http://localhost:3000`
+
+### Production (Deploy ke Railway)
+
+**Arsitektur Monolitik - 1 Server untuk Frontend + Backend**
+
+```bash
+# Windows
+.\deploy-railway.ps1
+
+# Linux/Mac
+./deploy-railway.sh
+```
+
+Atau manual:
+```bash
+npm install -g @railway/cli
+railway login
+railway up
+```
+
+📖 **Panduan lengkap:** Lihat file `RAILWAY_DEPLOY.md`
+
+---
+
+## ⚠️ Kenapa Tidak Firebase?
+
+Firebase **MEMAKSA** pemisahan frontend (hosting) dan backend (functions).  
+Railway/Render support **arsitektur monolitik** seperti CodeIgniter.
+
+Kalau tetap mau Firebase, lihat `DEPLOYMENT_GUIDE.md`
 
 ## 🎮 Metaverse Engine & Portal
 
@@ -405,6 +428,14 @@ Cara membuat base64 satu-baris:
   - `firebase deploy --only hosting,functions --project smart-34bcc`
 - Jika masih error autentikasi, cek dulu:
   - `firebase projects:list --project smart-34bcc`
+
+### Role IAM minimal untuk Service Account deploy (smart-34bcc)
+Jika deploy gagal saat “ensuring required API … is enabled” dengan error 403 permission, pastikan service account punya role ini di project `smart-34bcc`:
+- `roles/serviceusage.serviceUsageConsumer`
+- `roles/firebase.admin` (atau minimal hosting+functions admin sesuai kebutuhan)
+- `roles/cloudfunctions.admin`
+- `roles/iam.serviceAccountUser`
+- `roles/cloudbuild.builds.editor`
 
 ## 🎨 Component Standards
 
