@@ -1,6 +1,7 @@
 # Optimization #21: Containerization (Docker)
 # Use a slim Node.js base image for performance and security
-FROM node:18-slim AS builder
+# Using Node 24 for future-proofing and Vite compatibility
+FROM node:24-slim AS builder
 
 WORKDIR /app
 
@@ -18,7 +19,7 @@ RUN npm run build:portal
 RUN npm run build
 
 # --- Production Image ---
-FROM node:18-slim AS runner
+FROM node:24-slim AS runner
 
 WORKDIR /app
 
