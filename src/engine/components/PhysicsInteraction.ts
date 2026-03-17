@@ -8,7 +8,6 @@ import { container } from '../ServiceContainer';
  * Komponen untuk menangani interaksi fisik seperti mengangkat dan melempar objek.
  * Memungkinkan entitas (biasanya pemain) untuk berinteraksi dengan objek fisik lain.
  * 
- * @recommendation Mechanism #17 - Physics Interaction
  */
 export class PhysicsInteraction extends Component {
     private pickedEntity: any | null = null;

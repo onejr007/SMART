@@ -1,6 +1,5 @@
 /**
  * Simple In-Memory Cache Manager
- * @recommendation Database #13 - Caching Layer
  */
 class CacheManager {
     constructor() {

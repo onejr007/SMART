@@ -1,11 +1,9 @@
-import { database } from '../firebase.js';
-import { ref, get } from 'firebase/database';
 import { BadRequestError } from '../api/errorHandler.js';
 import logger from './logger.js';
+import { firebaseGet } from './firebase-rest.js';
 
 /**
  * Relational Data Integrity Helper
- * @recommendation Database #18 - Relational Data Integrity
  */
 export class RelationalValidator {
     /**
@@ -17,9 +15,8 @@ export class RelationalValidator {
         if (!id) return false;
         
         try {
-            const dbRef = ref(database, `${node}/${id}`);
-            const snapshot = await get(dbRef);
-            return snapshot.exists();
+            const data = await firebaseGet(`${node}/${id}`);
+            return Boolean(data);
         } catch (error) {
             logger.error(`Integrity check failed for ${node}/${id}:`, error);
             return false;

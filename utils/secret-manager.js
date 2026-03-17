@@ -5,7 +5,6 @@ dotenv.config();
 
 /**
  * Secret Management Abstraction Layer
- * @recommendation Security #1 - Environment Secret Management
  */
 class SecretManager {
     constructor() {

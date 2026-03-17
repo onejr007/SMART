@@ -26,21 +26,6 @@ export const useAuth = () => {
     return context;
 };
 
-// Firebase Database URL dengan auth secret
-const DB_URL = 'https://jbakun-62239-default-rtdb.asia-southeast1.firebasedatabase.app';
-const AUTH_SECRET = 'OPQ2iJqS1MOK0HjA1esCyvHCnJzN4zcZm0ym2iRxINGAT';
-
-// Simple hash function for password
-const simpleHash = (str: string): string => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-    }
-    return hash.toString(36);
-};
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     // Optimization #45: Global State Optimization (Zustand)
     const { user, loading, setUser, setLoading, logout: storeLogout } = useStore();
@@ -58,90 +43,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
     }, [setUser, setLoading]);
 
-    const signup = async (email: string, password: string, displayName: string) => {
-        const uid = simpleHash(email);
-        
-        const checkUrl = `${DB_URL}/users/${uid}.json?auth=${AUTH_SECRET}`;
-        const checkResponse = await fetch(checkUrl);
-        const existingUser = await checkResponse.json();
-        
-        if (existingUser) {
-            throw new Error('Email already registered');
-        }
-
-        const hashedPassword = simpleHash(password);
-
-        const userData = {
-            uid,
-            email,
-            displayName,
-            password: hashedPassword,
-            role: UserRole.PLAYER, // Default role (Security Recommendation #1 - RBAC)
-            createdAt: new Date().toISOString()
+    const normalizeUser = (raw: any): User => {
+        const roleValues = Object.values(UserRole) as string[];
+        const role = roleValues.includes(raw?.role) ? (raw.role as UserRole) : UserRole.PLAYER;
+        return {
+            uid: String(raw?.uid || ''),
+            email: String(raw?.email || ''),
+            displayName: String(raw?.displayName || ''),
+            role
         };
+    };
 
-        const saveUrl = `${DB_URL}/users/${uid}.json?auth=${AUTH_SECRET}`;
-        const saveResponse = await fetch(saveUrl, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(userData)
+    const signup = async (email: string, password: string, displayName: string) => {
+        const res = await fetch('/api/v1/portal/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ email, password, displayName })
         });
 
-        if (!saveResponse.ok) {
-            throw new Error('Failed to create user');
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+            throw new Error(data?.error || 'Failed to create user');
         }
 
-        const newUser: User = { uid, email, displayName, role: UserRole.PLAYER };
-        setUser(newUser);
+        setUser(normalizeUser(data.user));
     };
 
     const login = async (email: string, password: string) => {
-        const uid = simpleHash(email);
-        
-        const getUrl = `${DB_URL}/users/${uid}.json?auth=${AUTH_SECRET}`;
-        const response = await fetch(getUrl);
-        const userData = await response.json();
-        
-        if (!userData) {
-            throw new Error('User not found');
+        const res = await fetch('/api/v1/portal/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+            throw new Error(data?.error || 'Login failed');
         }
-
-        const hashedPassword = simpleHash(password);
-
-        if (userData.password !== hashedPassword) {
-            throw new Error('Invalid password');
-        }
-
-        const loggedUser: User = {
-            uid: userData.uid,
-            email: userData.email,
-            displayName: userData.displayName,
-            role: userData.role || UserRole.PLAYER // Load role from DB
-        };
-
-        // Backend Recommendation #2: Secure Session Management (HttpOnly Cookie)
-        try {
-            await fetch('http://localhost:3000/api/v1/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: loggedUser.uid, displayName: loggedUser.displayName })
-            });
-        } catch (e) {
-            console.error('Failed to set secure cookie session:', e);
-        }
-
-        setUser(loggedUser);
+        setUser(normalizeUser(data.user));
     };
 
     const logout = async () => {
-        // Backend Recommendation #2: Secure Session Management (HttpOnly Cookie)
-        try {
-            await fetch('http://localhost:3000/api/v1/auth/logout', { method: 'POST' });
-        } catch (e) {
-            console.error('Failed to clear secure cookie session:', e);
-        }
+        await fetch('/api/v1/portal/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => undefined);
         storeLogout();
     };
 

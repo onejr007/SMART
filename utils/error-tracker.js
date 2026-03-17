@@ -3,8 +3,6 @@ import { randomUUID } from 'node:crypto';
 
 /**
  * Foundation for Error Tracking and Distributed Tracing
- * @recommendation Production #24 - Error Tracking (Sentry)
- * @recommendation Production #20 - Distributed Tracing
  */
 class ErrorTracker {
     constructor() {

@@ -29,10 +29,13 @@ import { throttlingMiddleware } from './utils/throttling-middleware.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ 
   server,
+  path: '/ws',
   verifyClient: (info, callback) => {
     // Networking Recommendation #7: WebSocket Authentication (Enhanced with Cookies)
     const url = new URL(info.req.url, `http://${info.req.headers.host}`);
@@ -82,7 +85,7 @@ app.use(helmet({
 }));
 app.use(compression());
 app.use(cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'],
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
     credentials: true
 }));
 app.use(morgan('dev'));
@@ -107,17 +110,27 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(sanitizationMiddleware); // Database Recommendation #15
 
-// Static files with caching
-app.use(express.static('dist', { 
-  maxAge: '1h',
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-store');
+let vite = null;
+if (!isProduction) {
+  const { createServer: createViteServer } = await import('vite');
+  vite = await createViteServer({
+    root: path.join(__dirname, 'src'),
+    server: { middlewareMode: true }
+  });
+  app.use(vite.middlewares);
+  vite.ws.listen(server);
+} else {
+  app.use(express.static('dist', { 
+    maxAge: '1h',
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-store');
+      }
     }
-  }
-}));
-app.use('/components', express.static('src/components', { maxAge: '5m' }));
-app.use('/pages', express.static('src/pages', { maxAge: '5m' }));
+  }));
+  app.use('/components', express.static('src/components', { maxAge: '5m' }));
+  app.use('/pages', express.static('src/pages', { maxAge: '5m' }));
+}
 
 // Headers
 app.use((req, res, next) => {
@@ -300,6 +313,18 @@ app.get('*', (req, res, next) => {
 
   const accept = req.headers.accept || '';
   if (!accept.includes('text/html')) return next();
+
+  if (!isProduction && vite) {
+    const indexPath = path.join(__dirname, 'src', 'index.html');
+    fs.promises.readFile(indexPath, 'utf-8')
+      .then((template) => vite.transformIndexHtml(req.originalUrl, template))
+      .then((html) => res.status(200).set({ 'Content-Type': 'text/html' }).end(html))
+      .catch((e) => {
+        vite.ssrFixStacktrace(e);
+        next(e);
+      });
+    return;
+  }
 
   const indexPath = path.join(__dirname, 'dist', 'index.html');
   if (!fs.existsSync(indexPath)) return next();

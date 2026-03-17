@@ -2,7 +2,6 @@
  * Helper untuk mengelola OffscreenCanvas untuk tugas rendering latar belakang.
  * Memungkinkan pembuatan tekstur atau thumbnail tanpa membebani main thread.
  * 
- * @recommendation Performance #6 - OffscreenCanvas
  */
 export class OffscreenRenderer {
     private canvas: OffscreenCanvas;

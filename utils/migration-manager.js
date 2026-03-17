@@ -1,14 +1,12 @@
-import { database } from '../firebase.js';
-import { ref, get, set } from 'firebase/database';
 import logger from './logger.js';
+import { firebaseGet, firebasePut } from './firebase-rest.js';
 
 /**
  * Simple Migration Manager for Firebase
- * @recommendation Database #17 - Database Migration System
  */
 class MigrationManager {
     constructor() {
-        this.migrationsRef = ref(database, '_migrations');
+        this.migrationsPath = '_migrations';
     }
 
     /**
@@ -19,8 +17,7 @@ class MigrationManager {
         logger.info('Checking for pending database migrations...');
         
         try {
-            const snapshot = await get(this.migrationsRef);
-            const appliedMigrations = snapshot.exists() ? snapshot.val() : {};
+            const appliedMigrations = (await firebaseGet(this.migrationsPath)) || {};
 
             for (const migration of migrations) {
                 if (!appliedMigrations[migration.version]) {
@@ -31,7 +28,7 @@ class MigrationManager {
                             appliedAt: new Date().toISOString(),
                             success: true
                         };
-                        await set(this.migrationsRef, appliedMigrations);
+                        await firebasePut(this.migrationsPath, appliedMigrations);
                         logger.info(`Migration ${migration.version} applied successfully.`);
                     } catch (error) {
                         logger.error(`Migration ${migration.version} failed:`, error);

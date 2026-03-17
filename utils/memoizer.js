@@ -1,6 +1,5 @@
 /**
  * Simple Request Memoization Helper
- * @recommendation Optimization #44 - Request Memoization
  */
 class RequestMemoizer {
     constructor() {

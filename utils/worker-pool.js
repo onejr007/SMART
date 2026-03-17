@@ -4,7 +4,6 @@ import os from 'os';
 
 /**
  * Simple Worker Pool for CPU-intensive tasks
- * @recommendation Optimization #37 - Worker Threads for CPU Tasks
  */
 class WorkerPool {
     constructor(workerPath, numThreads = os.cpus().length) {

@@ -6,7 +6,6 @@ const DOMPurify = createDOMPurify(window);
 
 /**
  * Data Sanitization Pipeline
- * @recommendation Database #15 - Data Sanitization Pipeline
  */
 export const sanitizeData = (data) => {
     if (typeof data === 'string') {
@@ -32,7 +31,6 @@ export const sanitizeData = (data) => {
 
 /**
  * Firebase Path & Query Sanitizer
- * @recommendation Security #3 - SQL/NoSQL Injection Protection
  */
 export const sanitizePath = (path) => {
     if (typeof path !== 'string') return '';

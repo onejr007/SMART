@@ -23,8 +23,11 @@ import { RelationalValidator } from '../utils/relational-validator.js';
 import { cacheManager } from '../utils/cache-manager.js';
 import { memoizer } from '../utils/memoizer.js';
 import jwt from 'jsonwebtoken';
+import { createHash, randomBytes, scrypt as _scrypt, timingSafeEqual } from 'crypto';
+import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import { firebaseGet, firebasePost, firebasePut } from '../utils/firebase-rest.js';
 
 const router = Router();
 const aiContext = new AIContextManager();
@@ -37,6 +40,7 @@ const requestValidator = new RequestValidator();
 const healthChecker = new HealthChecker();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret_for_dev_only';
+const scrypt = promisify(_scrypt);
 
 // --- Auth Routes (Backend Recommendation #2: Secure Session Management) ---
 
@@ -81,6 +85,325 @@ router.get('/auth/me', (req, res) => {
         res.json({ user: decoded });
     } catch (err) {
         res.status(401).json({ error: 'Invalid session' });
+    }
+});
+
+function issueSessionCookie(res, payload) {
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+
+    res.cookie('smart_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000
+    });
+
+    return token;
+}
+
+function getSessionUser(req) {
+    const token = req.cookies.smart_token;
+    if (!token) return null;
+    try {
+        return jwt.verify(token, JWT_SECRET);
+    } catch {
+        return null;
+    }
+}
+
+function requireSession(req, res, next) {
+    const user = getSessionUser(req);
+    if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    req.sessionUser = user;
+    next();
+}
+
+function normalizeEmail(email) {
+    return String(email || '').trim().toLowerCase();
+}
+
+function makeUserId(email) {
+    const normalized = normalizeEmail(email);
+    if (!normalized) return null;
+    return createHash('sha256').update(normalized).digest('hex').slice(0, 24);
+}
+
+async function hashPassword(password, saltHex) {
+    const derivedKey = await scrypt(String(password || ''), Buffer.from(saltHex, 'hex'), 64);
+    return Buffer.from(derivedKey).toString('hex');
+}
+
+function legacySimpleHash(str) {
+    let hash = 0;
+    const s = String(str || '');
+    for (let i = 0; i < s.length; i++) {
+        const char = s.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return hash.toString(36);
+}
+
+async function verifyPassword(userData, password) {
+    if (!userData) return { ok: false, upgraded: false };
+
+    if (userData.passwordHash && userData.passwordSalt) {
+        const computed = await hashPassword(password, userData.passwordSalt);
+        const a = Buffer.from(String(userData.passwordHash), 'hex');
+        const b = Buffer.from(String(computed), 'hex');
+        if (a.length !== b.length) return { ok: false, upgraded: false };
+        const ok = timingSafeEqual(a, b);
+        return { ok, upgraded: false };
+    }
+
+    if (typeof userData.password === 'string') {
+        const ok = legacySimpleHash(password) === userData.password;
+        return { ok, upgraded: ok };
+    }
+
+    return { ok: false, upgraded: false };
+}
+
+async function upgradeLegacyPassword(userId, password) {
+    const salt = randomBytes(16).toString('hex');
+    const passwordHash = await hashPassword(password, salt);
+    const existing = (await firebaseGet(`users/${userId}`)) || {};
+    if (existing.password) {
+        delete existing.password;
+    }
+    await firebasePut(`users/${userId}`, {
+        ...existing,
+        passwordHash,
+        passwordSalt: salt,
+        passwordVersion: 1,
+        passwordAlgo: 'scrypt'
+    });
+}
+
+router.post('/portal/auth/signup', async (req, res) => {
+    try {
+        const { email, password, displayName } = req.body || {};
+        const normalizedEmail = normalizeEmail(email);
+        const userId = makeUserId(normalizedEmail);
+
+        if (!normalizedEmail || !password || !displayName || !userId) {
+            return res.status(400).json({ error: 'Invalid payload' });
+        }
+
+        const existing = await firebaseGet(`users/${userId}`);
+        if (existing) {
+            return res.status(409).json({ error: 'Email already registered' });
+        }
+
+        const salt = randomBytes(16).toString('hex');
+        const passwordHash = await hashPassword(password, salt);
+        const userRecord = {
+            uid: userId,
+            email: normalizedEmail,
+            displayName: String(displayName).trim(),
+            role: 'player',
+            createdAt: new Date().toISOString(),
+            passwordHash,
+            passwordSalt: salt,
+            passwordVersion: 1,
+            passwordAlgo: 'scrypt'
+        };
+
+        await firebasePut(`users/${userId}`, userRecord);
+
+        issueSessionCookie(res, { userId, displayName: userRecord.displayName, role: userRecord.role });
+        res.json({ user: { uid: userId, email: userRecord.email, displayName: userRecord.displayName, role: userRecord.role } });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ error: error.message || 'Internal server error' });
+    }
+});
+
+router.post('/portal/auth/login', async (req, res) => {
+    try {
+        const { email, password } = req.body || {};
+        const normalizedEmail = normalizeEmail(email);
+        const userId = makeUserId(normalizedEmail);
+        if (!normalizedEmail || !password || !userId) {
+            return res.status(400).json({ error: 'Invalid payload' });
+        }
+
+        const userData = await firebaseGet(`users/${userId}`);
+        if (!userData) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const result = await verifyPassword(userData, password);
+        if (!result.ok) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        if (result.upgraded) {
+            await upgradeLegacyPassword(userId, password);
+        }
+
+        const displayName = userData.displayName || normalizedEmail;
+        const role = userData.role || 'player';
+
+        issueSessionCookie(res, { userId, displayName, role });
+        res.json({ user: { uid: userId, email: userData.email || normalizedEmail, displayName, role } });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ error: error.message || 'Internal server error' });
+    }
+});
+
+router.post('/portal/auth/logout', (req, res) => {
+    res.clearCookie('smart_token');
+    res.json({ success: true });
+});
+
+router.get('/portal/games', async (req, res) => {
+    try {
+        const games = await firebaseGet('games');
+        if (!games) return res.json([]);
+        const list = Object.keys(games)
+            .map((id) => ({ id, ...games[id] }))
+            .filter((g) => !g?.isDeleted);
+        list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        res.json(list);
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ error: error.message || 'Internal server error' });
+    }
+});
+
+router.get('/portal/games/:gameId', async (req, res) => {
+    try {
+        const { gameId } = req.params;
+        const data = await firebaseGet(`games/${gameId}`);
+        if (!data || data.isDeleted) {
+            return res.status(404).json({ error: 'Game not found' });
+        }
+        res.json({ id: gameId, ...data });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ error: error.message || 'Internal server error' });
+    }
+});
+
+router.post('/portal/games', requireSession, async (req, res) => {
+    try {
+        const { title, scene, playerSchema, description } = req.body || {};
+        if (!title || !scene) {
+            return res.status(400).json({ error: 'Invalid payload' });
+        }
+
+        const sessionUser = req.sessionUser;
+        const gameData = {
+            title: String(title),
+            description: description ? String(description) : 'A user generated world built in SMART Engine',
+            author: sessionUser.displayName,
+            authorId: sessionUser.userId,
+            createdAt: new Date().toISOString(),
+            version: '2.1',
+            scene,
+            playerSchema: playerSchema || { level: 1, coins: 0 }
+        };
+
+        const result = await firebasePost('games', gameData);
+        res.status(201).json({ id: result?.name, ...gameData });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ error: error.message || 'Internal server error' });
+    }
+});
+
+router.put('/portal/user_game_data/:gameId', requireSession, async (req, res) => {
+    try {
+        const { gameId } = req.params;
+        const { progressData } = req.body || {};
+        if (!gameId || typeof progressData !== 'object' || progressData === null) {
+            return res.status(400).json({ error: 'Invalid payload' });
+        }
+
+        const sessionUser = req.sessionUser;
+        await firebasePut(`user_game_data/${sessionUser.userId}/${gameId}`, {
+            ...progressData,
+            lastUpdated: new Date().toISOString()
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ error: error.message || 'Internal server error' });
+    }
+});
+
+router.get('/portal/user_game_data/:gameId', requireSession, async (req, res) => {
+    try {
+        const { gameId } = req.params;
+        const sessionUser = req.sessionUser;
+        const data = await firebaseGet(`user_game_data/${sessionUser.userId}/${gameId}`);
+        res.json(data || null);
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ error: error.message || 'Internal server error' });
+    }
+});
+
+router.post('/portal/audit', requireSession, async (req, res) => {
+    try {
+        const { action, metadata, status } = req.body || {};
+        if (!action) return res.status(400).json({ error: 'Invalid payload' });
+        const sessionUser = req.sessionUser;
+        const auditLog = {
+            timestamp: new Date().toISOString(),
+            action: String(action),
+            userId: sessionUser.userId,
+            metadata: metadata ?? null,
+            status: status === 'failure' ? 'failure' : 'success'
+        };
+
+        const result = await firebasePost('audit_logs', auditLog);
+        res.status(201).json({ id: result?.name, ...auditLog });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ error: error.message || 'Internal server error' });
+    }
+});
+
+router.get('/portal/leaderboards/:gameId', async (req, res) => {
+    try {
+        const { gameId } = req.params;
+        const limit = Math.min(Number(req.query.limit || 10) || 10, 100);
+        const data = await firebaseGet(`leaderboards/${gameId}`);
+        if (!data) return res.json([]);
+
+        const entries = Object.values(data)
+            .filter((e) => e && typeof e.score === 'number')
+            .sort((a, b) => b.score - a.score)
+            .slice(0, limit);
+        res.json(entries);
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ error: error.message || 'Internal server error' });
+    }
+});
+
+router.post('/portal/leaderboards/:gameId/submit', requireSession, async (req, res) => {
+    try {
+        const { gameId } = req.params;
+        const { score } = req.body || {};
+        const numericScore = Number(score);
+        if (!Number.isFinite(numericScore)) {
+            return res.status(400).json({ error: 'Invalid payload' });
+        }
+
+        const sessionUser = req.sessionUser;
+        const entry = {
+            userId: sessionUser.userId,
+            score: numericScore,
+            timestamp: new Date().toISOString()
+        };
+
+        const existing = await firebaseGet(`leaderboards/${gameId}/${sessionUser.userId}`);
+        if (existing?.score >= numericScore) {
+            return res.json({ success: true, ignored: true });
+        }
+
+        await firebasePut(`leaderboards/${gameId}/${sessionUser.userId}`, entry);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ error: error.message || 'Internal server error' });
     }
 });
 

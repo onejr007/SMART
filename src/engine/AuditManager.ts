@@ -1,6 +1,3 @@
-import { database } from '../firebase';
-import { ref, push, set } from 'firebase/database';
-
 export interface AuditLog {
     timestamp: string;
     action: string;
@@ -31,10 +28,12 @@ class AuditManager {
         };
 
         try {
-            const auditRef = ref(database, 'audit_logs');
-            const newLogRef = push(auditRef);
-            await set(newLogRef, auditLog);
-            console.log(`[Audit] ${action} by ${userId} logged.`);
+            await fetch('/api/v1/portal/audit', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, metadata, status })
+            });
         } catch (error) {
             console.error("Failed to write audit log:", error);
         }

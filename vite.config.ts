@@ -6,6 +6,10 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
+    proxy: {
+      '/api': 'http://localhost:3000',
+      '/metrics': 'http://localhost:3000',
+    }
   },
   root: './src', // The root of the Vite project is src
   publicDir: '../public', // Public assets are one level up

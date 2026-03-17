@@ -8,11 +8,8 @@ Portal game profesional dan Multiverse Engine untuk game 3D berbasis web (Three.
 # Install dependencies
 npm install
 
-# Start Metaverse Portal (Frontend)
+# Start Metaverse Portal + API (Single Server)
 npm run dev
-
-# Start API server (optional)
-npm run dev:api
 
 # Build for production
 npm run build
@@ -24,8 +21,7 @@ npm run build:portal
 npm run deploy
 ```
 
-Metaverse Portal: `http://localhost:5173`  
-API Server (optional): `http://localhost:3000`
+Metaverse Portal + API: `http://localhost:3000`
 
 ## 🎮 Metaverse Engine & Portal
 
@@ -50,27 +46,27 @@ Fitur lengkap untuk membangun dan memainkan game 3D berbasis web dengan sistem a
 
 ### Cara Menggunakan Portal
 
-1. **Jalankan portal**: `npm run dev:portal` (Buka browser di `http://localhost:5173`)
+1. **Jalankan portal + API**: `npm run dev` (Buka browser di `http://localhost:3000`)
 
 2. **Register/Login**: 
    - Pilih "Sign Up" untuk membuat akun baru (email, password, display name)
-   - Data user disimpan langsung ke Firebase Realtime Database (jbakun-62239)
+   - Data user disimpan ke Firebase Realtime Database melalui API server
    - Atau "Login" jika sudah punya akun
-   - Sistem auth menggunakan database langsung, tanpa Firebase Authentication
+   - Session menggunakan HttpOnly Cookie
    
 3. **Browse Games**: 
    - Filter "All Games" untuk melihat semua game
    - Filter "My Games" untuk melihat game yang Anda buat
    - Klik card game untuk play
-   - Data game disimpan di Firebase Realtime Database (project jbakun-62239)
+   - Data game disimpan di Firebase Realtime Database melalui API server
    
 4. **Create Game**: 
    - Klik "Create" di navbar
    - Double-click object untuk select
    - Gunakan gizmo untuk move/rotate/scale
-   - Klik "Save Game" untuk save ke cloud (jbakun-62239 database)
+   - Klik "Save Game" untuk save ke cloud
    
-6. **Build & Deploy**: 
+5. **Build & Deploy**: 
    - Build: `npm run build:portal`
    - Deploy: `npm run deploy` (deploy ke Firebase Hosting smart-34bcc)
    - Note: Warning `punycode` deprecation adalah normal dan tidak mempengaruhi deployment
@@ -168,70 +164,8 @@ Berikut adalah status implementasi dari 50 rekomendasi di atas:
 
 ---
 
----
-
-## 🚀 50 Rekomendasi Penguatan Framework (Ready to Production)
-
-Berikut adalah 50 rekomendasi strategis untuk memperkuat infrastruktur inti framework Anda (Backend, Networking, Database, Security) sebelum masuk ke level Game/World Engine:
-
-### 🛡️ Core System & Security (Backend)
-
-### 🌐 Networking & Real-time (Networking)
-5. **CDN Integration**: Gunakan Content Delivery Network (Cloudflare/CloudFront) untuk menyajikan aset framework dan bundle frontend agar latensi rendah secara global.
-6. **DDoS Protection**: Aktifkan proteksi layer 7 di tingkat CDN untuk menyaring trafik bot berbahaya sebelum mencapai server origin Anda.
-8. **HTTP/2 Support**: Aktifkan HTTP/2 untuk memungkinkan *multiplexing* request, mempercepat pemuatan aset-aset kecil framework secara simultan.
-
-### 📊 Database & Data Integrity (Database)
-10. **Read/Write Splitting**: Jika menggunakan database SQL di masa depan, pisahkan trafik baca ke replica dan tulis ke master untuk performa maksimal.
-11. **Automated Backups**: Konfigurasikan backup harian otomatis untuk Firebase Realtime Database dan simpan di storage terpisah (misal: S3).
-12. **Query Optimization**: Gunakan `.indexOn` di Firebase Rules untuk semua field yang sering digunakan dalam filtering/sorting guna menghindari scan database yang lambat.
-14. **Offline Data Persistence**: Aktifkan fitur *disk persistence* di Firebase SDK klien agar aplikasi tetap bisa berjalan (read-only) saat koneksi internet terputus.
-
-### 🚀 Production Readiness & Monitoring (Production)
-19. **Uptime Monitoring**: Gunakan layanan seperti UptimeRobot atau StatusCake untuk memantau ketersediaan server API secara 24/7.
-23. **Blue-Green Deployment**: Siapkan infrastruktur untuk deployment tanpa downtime dengan teknik blue-green atau canary releases.
-26. **Static Code Analysis**: Gunakan `SonarQube` atau `ESLint` dengan aturan ketat untuk mendeteksi potensi bug dan *code smells* sebelum kode masuk ke branch utama.
-
-### ⚡ Performance & Scalability (Optimization)
-42. **Database Connection Pooling**: Jika bermigrasi ke database tradisional, pastikan menggunakan connection pooling untuk efisiensi penggunaan koneksi.
-46. **Server-Side Rendering (SSR) for SEO**: Pertimbangkan SSR untuk halaman landing atau daftar game publik agar metaverse Anda mudah terindeks oleh mesin pencari (SEO).
-
----
-
-## 🛠️ 50 Rekomendasi Penguatan SMART Metaverse Engine
-
-Berikut adalah 50 rekomendasi strategis untuk memperkuat sistem, meningkatkan performa, dan mengoptimalkan alur kerja AI dalam proyek ini:
-
-### 🛡️ System Strengthening (Security & Robustness)
-2. **Automated Vulnerability Scanning**: Integrasikan tool seperti Snyk atau GitHub Dependabot untuk memantau kerentanan library Three.js dan Cannon-es secara real-time.
-3. **Multi-Factor Auth (MFA)**: Tambahkan opsi MFA bagi akun pengembang atau kreator konten utama di portal.
-
-### ⚡ Performance Optimization
-4. **Physics Web Workers**: Pindahkan kalkulasi fisika Cannon-es ke Web Worker agar tidak membebani main thread (rendering).
-5. **Texture Atlasing**: Gabungkan beberapa tekstur kecil menjadi satu atlas besar untuk mengurangi jumlah draw calls ke GPU.
-
-### 📐 Clear Flow & Architecture
-6. **Build vs Runtime Separation**: Pisahkan logika build-time (generation) dan runtime secara ketat untuk meningkatkan efisiensi bundle size.
-
-### 🚀 System Improvisation
-7. **WebXR Support**: Tambahkan dukungan untuk Virtual Reality dan Augmented Reality agar metaverse bisa diakses melalui headset VR.
-8. **Monaco Editor Integration**: Integrasikan code editor profesional (seperti VS Code web) langsung di portal untuk scripting real-time.
-9. **WebRTC Voice Chat**: Tambahkan fitur komunikasi suara antar pemain yang berbasis posisi (spatial audio) menggunakan WebRTC.
-
-### ⚙️ Mechanism & Physics
-10. **Parallel Physics Simulation**: Tingkatkan Cannon-es untuk mendukung simulasi paralel jika jumlah entitas fisik melebihi ambang batas tertentu.
-11. **Raycast Vehicle Physics**: Implementasikan sistem fisika kendaraan yang realistis menggunakan teknik raycasting untuk suspensi dan ban.
-12. **Soft Body Physics**: Tambahkan dukungan untuk benda lunak (seperti kain atau jelly) untuk visual yang lebih imersif.
-13. **Ragdoll System**: Tambahkan sistem ragdoll untuk animasi kematian atau dampak fisik yang lebih realistis pada karakter.
-14. **Inverse Kinematics (IK)**: Gunakan IK untuk memastikan kaki karakter menapak dengan benar pada permukaan miring atau tangga.
-15. **NavMesh Pathfinding**: Tambahkan dukungan Navigation Mesh agar AI NPC bisa berpindah tempat menghindari rintangan secara cerdas.
-16. **Particle System Engine**: Bangun engine partikel performa tinggi untuk efek visual seperti ledakan, debu, api, dan sihir.
-- **Pemisahan Logika**: Jangan masukkan logika rendering `Three.js` langsung ke dalam komponen React. Gunakan `useRef` untuk meng-instansiasi class `Engine` dari `src/engine/Core.ts`.
-- **Fisika**: Pastikan setiap objek visual (`Three.Mesh`) disinkronkan dengan body fisika (`CANNON.Body`) di dalam method `update(delta)`.
-- **Event Loop**: Gunakan `engine.onUpdate(callback)` untuk mendaftarkan logika per-frame (misal: input handling atau animasi).
-
 ### 3. Menambahkan Game Baru
-- Saat ini daftar game bersifat dinamis dan diambil langsung dari Firebase Realtime Database.
+- Saat ini daftar game bersifat dinamis dan diambil melalui API Server.
 - Logika inisialisasi scene game berada di dalam method `loadGameScene` pada `src/portal/GameView.tsx`.
 - Untuk menambahkan game kompleks, buat file scene terpisah di folder `src/games/` dan panggil dari `GameView.tsx`.
 
@@ -242,65 +176,22 @@ Project ini menggunakan **Dua Project Firebase yang Berbeda**:
    - Deploy aplikasi menggunakan Firebase Hosting dari project ini
    - Analytics tracking
    
-2. **Database App (`jbakun-62239`)**: Digunakan untuk **Realtime Database** (Menyimpan SEMUA data)
-   - Database URL: `https://jbakun-62239-default-rtdb.asia-southeast1.firebasedatabase.app/`
-   - Auth Secret: `OPQ2iJqS1MOK0HjA1esCyvHCnJzN4zcZm0ym2iRxINGAT` (untuk write access)
-   - Database URL sudah include auth secret di query parameter
-   - Menyimpan: User data (signup/login) dan Game data (UGC)
+2. **Database App (`jbakun-62239`)**: Digunakan untuk **Realtime Database** (Menyimpan SEMUA data UGC)
+   - Menyimpan: User data (signup/login), Game data (UGC), Leaderboard, Audit log
+   - Akses write dilakukan **server-side** melalui API (tidak ada secret di client)
 
-**Sistem Authentication:**
-- TIDAK menggunakan Firebase Authentication
-- User data disimpan langsung ke Realtime Database di node `/users`
-- Password di-hash dengan simple hash function
-- Session management menggunakan localStorage
-- Menggunakan Firebase REST API dengan auth secret untuk write/read data
+**Sistem Authentication & Session:**
+- Tidak menggunakan Firebase Authentication
+- Signup/Login dilakukan via API Server: `POST /api/v1/portal/auth/signup` dan `POST /api/v1/portal/auth/login`
+- Password disimpan dalam bentuk hash `scrypt` (server-side)
+- Session menggunakan HttpOnly Cookie (`smart_token`)
 
-**Database Rules (jbakun-62239):**
-Untuk keamanan yang lebih baik, gunakan rules berikut di Firebase Console:
-
-```json
-{
-  "rules": {
-    "users": {
-      "$uid": {
-        ".read": true,
-        ".write": "!data.exists() || auth != null"
-      }
-    },
-    "games": {
-      ".read": true,
-      "$gameId": {
-        ".write": "auth != null",
-        ".validate": "newData.hasChildren(['title', 'description', 'author', 'createdAt'])"
-      }
-    }
-  }
-}
-```
-
-**Penjelasan Rules:**
-- `users/$uid/.read`: Semua orang bisa read user data (untuk cek email exists)
-- `users/$uid/.write`: Hanya bisa write jika data belum ada (signup) atau sudah authenticated
-- `games/.read`: Semua orang bisa read games (public)
-- `games/$gameId/.write`: Hanya authenticated user yang bisa write game
-- `.validate`: Validasi struktur data game harus lengkap
-
-**Untuk Development (Testing):**
-Jika ingin lebih simple saat development, gunakan:
-```json
-{
-  "rules": {
-    ".read": true,
-    ".write": true
-  }
-}
-```
-⚠️ **WARNING**: Rules ini TIDAK AMAN untuk production! Ubah sebelum deploy live.
-
-*Catatan untuk AI:* Semua operasi baca/tulis (user dan game) menggunakan objek `database` yang di-export dari `src/firebase.ts`.
+**Konfigurasi Secret (server-side only):**
+- Simpan `FIREBASE_DB_URL` dan `FIREBASE_AUTH_SECRET` di `.env`
+- Contoh variabel ada di `.env.example`
 
 ### 5. Struktur Data UGC (User-Generated Content)
-Saat user menekan "Save Game" di Editor, data akan di-push ke Firebase Realtime Database di bawah node `/games` dengan struktur berikut:
+Saat user menekan "Save Game" di Editor, data akan disimpan melalui API Server ke Firebase Realtime Database di node `/games` dengan struktur berikut:
 ```json
 {
   "title": "Game by Creator_1234 - 10:00 AM",
@@ -318,7 +209,7 @@ Saat user menekan "Save Game" di Editor, data akan di-push ke Firebase Realtime 
   ]
 }
 ```
-**Syarat Mutlak**: Pastikan Firebase Realtime Database pada project `jbakun-62239` memiliki rules `.read: true` dan `.write: true` agar fitur Editor berfungsi.
+Untuk production, pastikan rules database membatasi write dari client, karena semua write dilakukan lewat server.
 
 ---
 
@@ -467,6 +358,37 @@ CACHE_TTL=30000
 MAX_BATCH_SIZE=50
 ```
 
+## 🚀 Deploy (PENTING)
+
+Project ini terdiri dari 2 bagian:
+- **Frontend (Vite → dist)**: di-deploy ke Firebase Hosting
+- **Backend (Express API)**: di-deploy sebagai Firebase Functions di project Hosting yang sama
+
+### 1) Frontend (Firebase Hosting)
+- `.env` memang di-ignore, tapi nilai `VITE_*` dibaca saat proses build dan ikut masuk ke bundle `dist/assets/*`.
+- Jika build dilakukan di GitHub Actions, set `VITE_FIREBASE_*` sebagai GitHub Secrets agar build memakai nilai yang benar.
+  - `VITE_FIREBASE_API_KEY`
+  - `VITE_FIREBASE_AUTH_DOMAIN`
+  - `VITE_FIREBASE_PROJECT_ID`
+  - `VITE_FIREBASE_STORAGE_BUCKET`
+  - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+  - `VITE_FIREBASE_APP_ID`
+  - `VITE_FIREBASE_MEASUREMENT_ID`
+
+### 2) Backend (Firebase Functions di smart-34bcc)
+- Backend tidak perlu server terpisah (tidak ada Cloud Run).
+- Hosting sudah dikonfigurasi me-rewrite `/api/**` dan `/metrics` ke Firebase Function `api` melalui `firebase.json`.
+- Variabel `FIREBASE_DB_URL` dan `FIREBASE_AUTH_SECRET` tetap **server-side only**.
+- Backend membaca secret dari Firebase Functions Runtime Config:
+  - `smart.firebase_db_url`
+  - `smart.firebase_auth_secret`
+  - `smart.allowed_origins`
+- Untuk deploy otomatis dari GitHub Actions, set GitHub Secrets:
+  - `FIREBASE_SERVICE_ACCOUNT_SMART_34BCC`
+  - `FIREBASE_DB_URL`
+  - `FIREBASE_AUTH_SECRET`
+  - `ALLOWED_ORIGINS`
+
 ## 🎨 Component Standards
 
 ### Naming Convention
@@ -494,7 +416,7 @@ MAX_BATCH_SIZE=50
 
 ```bash
 npm run dev          # Start development server
-npm run dev:portal   # Start Metaverse Portal (Vite)
+npm run dev:portal   # Start Metaverse Portal only (Vite)
 npm run build        # Build for production
 npm run lint         # Check code standards
 npm run typecheck    # JavaScript syntax check
@@ -581,11 +503,9 @@ Saat ini rules database: `".read": true, ".write": true` - **TIDAK AMAN untuk pr
 }
 ```
 
-2. **Atau Tetap Gunakan Auth Secret:**
-   - Auth secret `OPQ2iJqS1MOK0HjA1esCyvHCnJzN4zcZm0ym2iRxINGAT` sudah digunakan di code
-   - Secret ini bypass database rules
-   - **JANGAN expose secret di client-side untuk production!**
-   - Untuk production, pindahkan logic auth ke backend/serverless function
+2. **Gunakan akses server-side untuk write:**
+   - Simpan secret database di server (`FIREBASE_AUTH_SECRET`), bukan di client
+   - Database rules bisa dibuat lebih ketat karena client tidak melakukan write langsung
 
 3. **Best Practice untuk Production:**
    - Buat Firebase Cloud Functions untuk handle signup/login
@@ -603,35 +523,20 @@ Rules `".read": true, ".write": true` OK untuk testing, tapi:
 ## 🔧 Troubleshooting
 
 ### Error: Permission denied saat register/login
-**Penyebab**: Firebase Realtime Database rules tidak allow write
+**Penyebab**: API server gagal akses Firebase Realtime Database (secret tidak valid / env belum diset)
 
 **Solusi**:
-1. Buka Firebase Console: https://console.firebase.google.com
-2. Pilih project **"jbakun-62239"**
-3. Klik **"Realtime Database"** di menu kiri
-4. Klik tab **"Rules"**
-5. Update rules menjadi:
-```json
-{
-  "rules": {
-    ".read": true,
-    ".write": true
-  }
-}
-```
-6. Klik **"Publish"**
-7. Refresh aplikasi dan coba register lagi
-
-**Note**: Code sudah menggunakan auth secret di URL, tapi beberapa Firebase rules tetap perlu di-set allow write.
+1. Pastikan server berjalan: `npm run dev`
+2. Pastikan `.env` punya `FIREBASE_DB_URL` dan `FIREBASE_AUTH_SECRET`
+3. Jalankan ulang server setelah update `.env`
 
 ### Error: Database write failed
-**Penyebab**: Database URL atau secret key salah
+**Penyebab**: `FIREBASE_DB_URL` atau `FIREBASE_AUTH_SECRET` salah
 
 **Solusi**:
-1. Pastikan URL database: `https://jbakun-62239-default-rtdb.asia-southeast1.firebasedatabase.app`
-2. Pastikan auth secret: `OPQ2iJqS1MOK0HjA1esCyvHCnJzN4zcZm0ym2iRxINGAT`
-3. Check browser console untuk error detail
-4. Verify database rules allow write
+1. Pastikan `FIREBASE_DB_URL` adalah URL root database, tanpa `/.json`
+2. Pastikan `FIREBASE_AUTH_SECRET` valid dan hanya ada di server-side
+3. Cek log server untuk pesan error dari Firebase
 
 ### Warning: `punycode` deprecation
 **Status**: Normal, tidak mempengaruhi aplikasi
@@ -667,7 +572,7 @@ Last generated: 2026-03-17T13:43:14.076Z
 Last updated: 2026-03-17
 
 ### ✨ Major Updates
-- **Authentication System**: Implemented Firebase Authentication with login/register
+- **Authentication System**: Custom auth via API server + HttpOnly cookie session
 - **Modern UI**: Glassmorphism design dengan smooth animations
 - **Single Page App**: No reload navigation dengan React Router-like behavior
 - **Professional Design**: Dark theme dengan gradient accents
@@ -694,9 +599,9 @@ Last updated: 2026-03-17
 
 ### 🔑 Firebase Configuration
 - **Hosting**: smart-34bcc (untuk deploy aplikasi)
-- **Database**: jbakun-62239 dengan auth secret di URL (untuk user data dan game data)
-- **Database URL**: `https://jbakun-62239-default-rtdb.asia-southeast1.firebasedatabase.app/?auth=OPQ2iJqS1MOK0HjA1esCyvHCnJzN4zcZm0ym2iRxINGAT`
-- **Auth System**: Custom auth menggunakan database langsung (tanpa Firebase Authentication)
+- **Database**: jbakun-62239 (akses write lewat API server)
+- **Database URL**: diset via `FIREBASE_DB_URL` (server-side)
+- **Auth System**: Custom auth via API server + HttpOnly cookie session
 
 <!-- AI_DOCS_END -->
 

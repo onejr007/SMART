@@ -1,5 +1,3 @@
-import { database } from '../firebase';
-import { ref, set, get, push, child, runTransaction } from 'firebase/database';
 import { SceneManager } from './SceneManager';
 import { eventBus } from './EventBus';
 import { auditManager } from './AuditManager';
@@ -16,57 +14,37 @@ export class PersistenceManager {
         return PersistenceManager.instance;
     }
 
-    /**
-     * Soft delete an item by setting isDeleted: true.
-     * @recommendation Database #15 - Soft Deletes
-     */
-    public async softDelete(path: string) {
-        try {
-            const dbRef = ref(database, path);
-            await set(dbRef, { 
-                isDeleted: true, 
-                deletedAt: new Date().toISOString() 
-            });
-            console.info(`Soft deleted item at ${path}`);
-        } catch (error: any) {
-            console.error(`Soft delete failed at ${path}:`, error);
-            throw error;
+    private async jsonRequest<T>(url: string, init?: RequestInit): Promise<T> {
+        const res = await fetch(url, {
+            credentials: 'include',
+            ...init,
+            headers: {
+                'Content-Type': 'application/json',
+                ...(init?.headers || {})
+            }
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+            const message = (data as any)?.error || `Request failed (${res.status})`;
+            throw new Error(message);
         }
-    }
-
-    /**
-     * Menjalankan operasi atomik pada database (Transaction).
-     * @recommendation Database #11 - Atomic Operations
-     */
-    public async performTransaction(path: string, updateFn: (currentData: any) => any) {
-        const dbRef = ref(database, path);
-        try {
-            const result = await runTransaction(dbRef, updateFn);
-            return result;
-        } catch (error: any) {
-            console.error(`Transaction failed at ${path}:`, error);
-            throw error;
-        }
+        return data as T;
     }
 
     public async saveGame(userId: string, title: string, sceneManager: SceneManager, playerSchema?: any) {
-        const gameData = {
-            title,
-            author: userId,
-            createdAt: new Date().toISOString(),
-            version: "2.1",
-            scene: sceneManager.toJSON(),
-            playerSchema: playerSchema || { level: 1, coins: 0 } // Default schema if not provided
-        };
-
         try {
-            const gamesRef = ref(database, 'games');
-            const newGameRef = push(gamesRef);
-            await set(newGameRef, gameData);
+            const payload = await this.jsonRequest<{ id: string }>('/api/v1/portal/games', {
+                method: 'POST',
+                body: JSON.stringify({
+                    title,
+                    scene: sceneManager.toJSON(),
+                    playerSchema
+                })
+            });
             
-            await auditManager.log('GAME_SAVE', userId, { gameId: newGameRef.key, title, schema: playerSchema });
-            eventBus.emit('db:saved', { id: newGameRef.key, title });
-            return newGameRef.key;
+            await auditManager.log('GAME_SAVE', userId, { gameId: payload.id, title, schema: playerSchema });
+            eventBus.emit('db:saved', { id: payload.id, title });
+            return payload.id;
         } catch (error: any) {
             console.error("Database Save Error:", error);
             await auditManager.log('GAME_SAVE_FAILED', userId, { title, error: error.message }, 'failure');
@@ -80,10 +58,9 @@ export class PersistenceManager {
      */
     public async saveUserProgress(userId: string, gameId: string, progressData: any) {
         try {
-            const progressRef = ref(database, `user_game_data/${userId}/${gameId}`);
-            await set(progressRef, {
-                ...progressData,
-                lastUpdated: new Date().toISOString()
+            await this.jsonRequest('/api/v1/portal/user_game_data/' + encodeURIComponent(gameId), {
+                method: 'PUT',
+                body: JSON.stringify({ progressData })
             });
             
             eventBus.emit('db:progress-saved', { userId, gameId });
@@ -100,12 +77,11 @@ export class PersistenceManager {
      */
     public async loadUserProgress(userId: string, gameId: string): Promise<any> {
         try {
-            const progressRef = ref(database, `user_game_data/${userId}/${gameId}`);
-            const snapshot = await get(progressRef);
-            
-            if (snapshot.exists()) {
-                return snapshot.val();
-            }
+            const progress = await this.jsonRequest<any>('/api/v1/portal/user_game_data/' + encodeURIComponent(gameId), {
+                method: 'GET'
+            }).catch(() => null);
+
+            if (progress) return progress;
 
             // Jika tidak ada progres, ambil default schema dari game
             const gameData = await this.loadGame(gameId);
@@ -118,16 +94,9 @@ export class PersistenceManager {
 
     public async loadGame(gameId: string): Promise<any> {
         try {
-            const gameRef = ref(database, `games/${gameId}`);
-            const snapshot = await get(gameRef);
-            
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                eventBus.emit('db:loaded', { id: gameId, data });
-                return data;
-            } else {
-                throw new Error("Game not found");
-            }
+            const data = await this.jsonRequest<any>('/api/v1/portal/games/' + encodeURIComponent(gameId), { method: 'GET' });
+            eventBus.emit('db:loaded', { id: gameId, data });
+            return data;
         } catch (error) {
             console.error("Database Load Error:", error);
             eventBus.emit('db:error', { operation: 'load', error });
@@ -137,17 +106,8 @@ export class PersistenceManager {
 
     public async listGames(): Promise<any[]> {
         try {
-            const gamesRef = ref(database, 'games');
-            const snapshot = await get(gamesRef);
-            
-            if (snapshot.exists()) {
-                const games = snapshot.val();
-                return Object.keys(games).map(key => ({
-                    id: key,
-                    ...games[key]
-                }));
-            }
-            return [];
+            const games = await this.jsonRequest<any[]>('/api/v1/portal/games', { method: 'GET' });
+            return games || [];
         } catch (error) {
             console.error("Database List Error:", error);
             return [];

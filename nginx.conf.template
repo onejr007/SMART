@@ -1,35 +1,20 @@
-# Networking Recommendation #7: Load Balancing (Nginx Configuration Template)
-# This configuration is designed for production use to distribute load
-# across multiple instances of the SMART Metaverse Engine.
-
 upstream smart_engine_backend {
-    # Distribution algorithm: least_conn (Best for long-lived WebSocket connections)
     least_conn;
-    
-    # List of backend server instances
     server localhost:3000;
-    # server backend-2:3000;
-    # server backend-3:3000;
-    
-    # Enable session persistence (Optional but recommended for consistency)
-    # sticky cookie srv_id expires 1h domain=.example.com path=/;
 }
 
 server {
     listen 80;
     server_name smart-metaverse.example.com;
 
-    # Security Headers (Production Readiness #26)
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-XSS-Protection "1; mode=block";
     add_header X-Content-Type-Options "nosniff";
     add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://firebasestorage.googleapis.com; connect-src 'self' ws: wss: https://*.firebaseio.com; font-src 'self' https://fonts.gstatic.com; object-src 'none'; frame-ancestors 'none';";
 
-    # Gzip Compression (Optimization #7)
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
 
-    # API and General Traffic
     location /api/ {
         proxy_pass http://smart_engine_backend;
         proxy_http_version 1.1;
@@ -41,20 +26,61 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 
-    # WebSocket Support (Networking #2)
     location /ws {
         proxy_pass http://smart_engine_backend;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "Upgrade";
         proxy_set_header Host $host;
-        
-        # Increase timeouts for long-lived WebSocket connections
         proxy_read_timeout 86400s;
         proxy_send_timeout 86400s;
     }
 
-    # Static Assets (CDN Ready)
+    location / {
+        root /var/www/smart-engine/dist;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+        expires 1d;
+        add_header Cache-Control "public, no-transform";
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name smart-metaverse.example.com;
+
+    ssl_certificate     /etc/ssl/certs/smart-metaverse.crt;
+    ssl_certificate_key /etc/ssl/private/smart-metaverse.key;
+
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Content-Type-Options "nosniff";
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://firebasestorage.googleapis.com; connect-src 'self' ws: wss: https://*.firebaseio.com; font-src 'self' https://fonts.gstatic.com; object-src 'none'; frame-ancestors 'none';";
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    location /api/ {
+        proxy_pass http://smart_engine_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location /ws {
+        proxy_pass http://smart_engine_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+    }
+
     location / {
         root /var/www/smart-engine/dist;
         index index.html;

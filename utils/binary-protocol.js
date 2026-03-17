@@ -4,7 +4,6 @@ const msg = msgpack();
 
 /**
  * Binary Protocol Helper using MessagePack
- * @recommendation Networking #5 - Binary Data Transmission
  */
 export class BinaryProtocol {
     /**

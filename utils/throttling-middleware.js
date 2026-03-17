@@ -2,7 +2,6 @@ import logger from './logger.js';
 
 /**
  * Middleware to simulate network latency and throttling
- * @recommendation Networking #9 - Network Throttling Simulation
  */
 export const throttlingMiddleware = (req, res, next) => {
     // Only apply in development or when explicitly requested via header

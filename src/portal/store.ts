@@ -42,9 +42,6 @@ interface AppState {
     prefetchGame: (gameId: string) => Promise<void>;
 }
 
-const DB_URL = 'https://jbakun-62239-default-rtdb.asia-southeast1.firebasedatabase.app';
-const AUTH_SECRET = 'OPQ2iJqS1MOK0HjA1esCyvHCnJzN4zcZm0ym2iRxINGAT';
-
 export const useStore = create<AppState>((set, get) => ({
     user: null,
     loading: true,
@@ -80,16 +77,14 @@ export const useStore = create<AppState>((set, get) => ({
         if (existingGame && existingGame.scene) return;
 
         try {
-            const url = `${DB_URL}/games/${gameId}.json?auth=${AUTH_SECRET}`;
-            const response = await fetch(url);
-            const gameData = await response.json();
+            const response = await fetch(`/api/v1/portal/games/${encodeURIComponent(gameId)}`, { credentials: 'include' });
+            const payload = await response.json().catch(() => null);
             
-            if (gameData) {
+            if (response.ok && payload) {
                 const updatedGames = games.map(g => 
-                    g.id === gameId ? { ...g, ...gameData } : g
+                    g.id === gameId ? { ...g, ...payload } : g
                 );
                 set({ games: updatedGames });
-                console.log(`🚀 Prefetched game: ${gameId}`);
             }
         } catch (error) {
             console.error('Failed to prefetch game:', error);
