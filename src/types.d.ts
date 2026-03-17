@@ -1,8 +1,4 @@
 /// <reference types="vite/client" />
-
-declare module 'msgpack5';
-declare module '*/utils/logger.js';
-declare module '*/utils/sanitizer.js';
 declare module '*/utils/binary-protocol.js';
 declare module '*/utils/relational-validator.js';
 declare module '*/utils/memoizer.js';

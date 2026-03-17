@@ -1,9 +1,9 @@
 import { eventBus } from './EventBus';
 import { SceneManager } from './SceneManager';
 import { container } from './ServiceContainer';
-import msgpack from 'msgpack5';
+// import msgpack from 'msgpack5'; // Not needed for standalone Firebase
 
-const msg = msgpack();
+// const msg = msgpack(); // Not needed for standalone Firebase
 
 export interface EntityState {
     id: string;
@@ -32,9 +32,9 @@ export class NetworkManager {
         this.socket.onmessage = (event) => {
             let data;
             if (event.data instanceof Blob) {
-                // Networking Recommendation #5: Binary Data Transmission (MessagePack)
-                event.data.arrayBuffer().then(buffer => {
-                    data = msg.decode(new Uint8Array(buffer));
+                // Binary data - parse as JSON for now (msgpack removed)
+                event.data.text().then(text => {
+                    data = JSON.parse(text);
                     this.handleMessage(data);
                 });
             } else {
@@ -86,13 +86,10 @@ export class NetworkManager {
     public send(type: string, payload: any, useBinary: boolean = false) {
         if (!this.isConnected || !this.socket) return;
         
-        const message = { type, payload, binary: useBinary };
+        const message = { type, payload };
         
-        if (useBinary) {
-            this.socket.send(msg.encode(message));
-        } else {
-            this.socket.send(JSON.stringify(message));
-        }
+        // Always use JSON for standalone Firebase (msgpack removed)
+        this.socket.send(JSON.stringify(message));
     }
 
     public disconnect() {

@@ -70,9 +70,10 @@ export class LeaderboardManager {
             }
 
             const data = snapshot.val();
-            const entries: LeaderboardEntry[] = Object.values(data)
+            const entries = Object.values(data)
                 .filter((entry: any) => entry && typeof entry.score === 'number')
-                .sort((a: any, b: any) => b.score - a.score)
+                .map((entry: any) => entry as LeaderboardEntry)
+                .sort((a, b) => b.score - a.score)
                 .slice(0, limit);
 
             return entries;
