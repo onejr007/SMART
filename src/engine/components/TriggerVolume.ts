@@ -7,6 +7,7 @@ export class TriggerVolume extends Component {
     private onEnterCallback?: (other: Entity) => void;
     private onExitCallback?: (other: Entity) => void;
     private currentIntersections: Set<Entity> = new Set();
+    private onCollide: ((event: any) => void) | null = null;
 
     constructor(onEnter?: (other: Entity) => void, onExit?: (other: Entity) => void) {
         super('TriggerVolume');
@@ -15,12 +16,10 @@ export class TriggerVolume extends Component {
     }
 
     public onAttach(): void {
-        // Set physics body to trigger mode
-        this.entity.body.isTrigger = true;
+        (this.entity.body as any).isTrigger = true;
+        this.entity.body.collisionResponse = false;
         
-        // Listen for collisions from the physics world
-        // Cannon-es uses 'collide' event
-        this.entity.body.addEventListener('collide', (event: any) => {
+        this.onCollide = (event: any) => {
             const otherBody = event.body as CANNON.Body;
             const otherEntity = (otherBody as any).entityRef as Entity;
             
@@ -28,7 +27,16 @@ export class TriggerVolume extends Component {
                 this.currentIntersections.add(otherEntity);
                 this.handleEnter(otherEntity);
             }
-        });
+        };
+        this.entity.body.addEventListener('collide', this.onCollide);
+    }
+    
+    public onDetach(): void {
+        if (this.onCollide) {
+            this.entity.body.removeEventListener('collide', this.onCollide as any);
+            this.onCollide = null;
+        }
+        this.currentIntersections.clear();
     }
 
     private handleEnter(other: Entity) {

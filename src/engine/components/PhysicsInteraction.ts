@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { Component } from '../Component';
 import { eventBus } from '../EventBus';
-import { container } from '../ServiceContainer';
+import { container, ServiceTokens } from '../ServiceContainer';
 
 /**
  * Komponen untuk menangani interaksi fisik seperti mengangkat dan melempar objek.
@@ -21,7 +21,7 @@ export class PhysicsInteraction extends Component {
         super('PhysicsInteraction');
         this.camera = camera;
         this.raycaster = new THREE.Raycaster();
-        this.physicsWorld = container.get<CANNON.World>('Physics');
+        this.physicsWorld = container.get<CANNON.World>(ServiceTokens.Physics);
     }
 
     /**
@@ -35,7 +35,7 @@ export class PhysicsInteraction extends Component {
 
         // Raycast dari tengah layar
         this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
-        const scene = container.get<THREE.Scene>('Scene');
+        const scene = container.get<THREE.Scene>(ServiceTokens.Scene);
         const intersects = this.raycaster.intersectObjects(scene.children, true);
 
         if (intersects.length > 0) {

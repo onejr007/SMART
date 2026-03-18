@@ -76,4 +76,48 @@ export class SceneManager {
     public toJSON() {
         return this.getAllEntities().map(ent => ent.toJSON());
     }
+
+    public serialize(): any {
+        return {
+            entities: this.getAllEntities().map(entity => ({
+                name: entity.name,
+                position: {
+                    x: entity.mesh.position.x,
+                    y: entity.mesh.position.y,
+                    z: entity.mesh.position.z
+                },
+                rotation: {
+                    x: entity.mesh.rotation.x,
+                    y: entity.mesh.rotation.y,
+                    z: entity.mesh.rotation.z
+                },
+                scale: {
+                    x: entity.mesh.scale.x,
+                    y: entity.mesh.scale.y,
+                    z: entity.mesh.scale.z
+                },
+                mass: entity.body.mass,
+                components: [] // Simplified for now
+            })),
+            timestamp: Date.now()
+        };
+    }
+
+    public deserialize(data: any): void {
+        this.clear();
+        
+        if (data.entities) {
+            data.entities.forEach((entityData: any) => {
+                const entity = new Entity({
+                    position: new THREE.Vector3(entityData.position.x, entityData.position.y, entityData.position.z),
+                    rotation: new THREE.Euler(entityData.rotation.x, entityData.rotation.y, entityData.rotation.z),
+                    size: new THREE.Vector3(entityData.scale.x, entityData.scale.y, entityData.scale.z),
+                    mass: entityData.mass,
+                    name: entityData.name
+                });
+                
+                this.addEntity(entity);
+            });
+        }
+    }
 }

@@ -17,5 +17,13 @@
     "jsx": "react-jsx"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": [
+    "node_modules",
+    "src/engine/NetworkBootstrap.ts",
+    "src/engine/SocialBootstrap.ts",
+    "src/engine/SecurityBootstrap.ts",
+    "src/engine/RenderingBootstrap.ts",
+    "src/engine/ContentBootstrap.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

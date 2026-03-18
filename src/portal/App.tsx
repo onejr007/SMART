@@ -1,12 +1,13 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { AuthProvider, useAuth } from './AuthContext';
+import { useStore, UserRole } from './store';
 import Auth from './Auth';
 import Navbar from './Navbar';
 import GameList from './GameList';
-import { analytics } from '../firebase';
+import { analytics, auth } from '../firebase';
 import { logEvent } from "firebase/analytics";
+import { onAuthStateChanged } from 'firebase/auth';
+import { ErrorBoundary } from './ErrorBoundary';
 
-// Performance Optimization #6: Lazy Loading
 const GameView = lazy(() => import('./GameView'));
 const EditorWrapper = lazy(() => import('./EditorWrapper'));
 
@@ -16,13 +17,37 @@ export interface Game {
     description: string;
     author: string;
     thumbnail?: string;
-    scene?: any[]; // Array of serialized entities
+    scene?: any[];
 }
 
-const AppContent: React.FC = () => {
-    const { user, loading } = useAuth();
+const App: React.FC = () => {
+    const { user, loading, setUser, setLoading } = useStore();
     const [view, setView] = useState<'home' | 'create' | 'play'>('home');
     const [activeGame, setActiveGame] = useState<Game | null>(null);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                const token = await firebaseUser.getIdTokenResult();
+                const role =
+                    token.claims.role === UserRole.ADMIN ||
+                    token.claims.role === UserRole.CREATOR ||
+                    token.claims.role === UserRole.PLAYER
+                        ? (token.claims.role as UserRole)
+                        : UserRole.PLAYER;
+                setUser({
+                    uid: firebaseUser.uid,
+                    email: firebaseUser.email || '',
+                    displayName: firebaseUser.displayName || '',
+                    role
+                });
+            } else {
+                setUser(null);
+            }
+            setLoading(false);
+        });
+        return () => unsubscribe();
+    }, [setUser, setLoading]);
 
     useEffect(() => {
         if (user) {
@@ -85,14 +110,14 @@ const AppContent: React.FC = () => {
 
     return (
         <div style={{ width: '100%', minHeight: '100vh' }}>
-            {view !== 'play' && (
+            {view === 'home' && (
                 <Navbar onNavigate={handleNavigate} currentView={view} />
             )}
 
             <div style={{ width: '100%', minHeight: '100vh' }}>
                 <Suspense fallback={<div style={{ color: 'rgba(255, 255, 255, 0.6)', padding: '20px', textAlign: 'center' }}>Loading component...</div>}>
                     {view === 'home' && (
-                        <GameList onPlay={handlePlay} />
+                        <GameList onPlay={handlePlay} onCreate={() => handleNavigate('create')} />
                     )}
 
                     {view === 'create' && (
@@ -100,19 +125,13 @@ const AppContent: React.FC = () => {
                     )}
 
                     {view === 'play' && activeGame && (
-                        <GameView game={activeGame} onExit={handleExit} />
+                        <ErrorBoundary fallback={<div style={{ padding: 20 }}>Game failed to load. Returning to home...</div>}>
+                            <GameView game={activeGame} onExit={handleExit} />
+                        </ErrorBoundary>
                     )}
                 </Suspense>
             </div>
         </div>
-    );
-};
-
-const App: React.FC = () => {
-    return (
-        <AuthProvider>
-            <AppContent />
-        </AuthProvider>
     );
 };
 

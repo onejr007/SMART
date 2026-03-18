@@ -1,0 +1,11 @@
+{
+  "name": "SMART Metaverse Portal",
+  "short_name": "SMART",
+  "description": "Standalone Firebase Game Portal & Multiverse Engine for web-based 3D games",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#667eea",
+  "orientation": "any",
+  "icons": []
+}

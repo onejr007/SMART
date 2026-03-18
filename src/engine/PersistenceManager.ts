@@ -24,7 +24,7 @@ export class PersistenceManager {
         return user;
     }
 
-    public async saveGame(userId: string, title: string, sceneManager: SceneManager, playerSchema?: any) {
+    public async saveGame(title: string, sceneManager: SceneManager, playerSchema?: any) {
         try {
             const user = this.getCurrentUser();
             
@@ -47,11 +47,12 @@ export class PersistenceManager {
             
             const gameId = newGameRef.key!;
             
-            await auditManager.log('GAME_SAVE', userId, { gameId, title, schema: playerSchema });
+            await auditManager.log('GAME_SAVE', user.uid, { gameId, title, schema: playerSchema });
             eventBus.emit('db:saved', { id: gameId, title });
             return gameId;
         } catch (error: any) {
             console.error("Database Save Error:", error);
+            const userId = auth.currentUser?.uid || 'unknown';
             await auditManager.log('GAME_SAVE_FAILED', userId, { title, error: error.message }, 'failure');
             eventBus.emit('db:error', { operation: 'save', error });
             throw error;
@@ -64,8 +65,11 @@ export class PersistenceManager {
     public async saveUserProgress(userId: string, gameId: string, progressData: any) {
         try {
             const user = this.getCurrentUser();
+            if (user.uid !== userId) {
+                throw new Error('Invalid userId for saveUserProgress');
+            }
             
-            const progressRef = ref(database, `user_game_data/${user.uid}/${gameId}`);
+            const progressRef = ref(database, `user_game_data/${userId}/${gameId}`);
             await set(progressRef, {
                 ...progressData,
                 lastUpdated: new Date().toISOString()
@@ -86,8 +90,11 @@ export class PersistenceManager {
     public async loadUserProgress(userId: string, gameId: string): Promise<any> {
         try {
             const user = this.getCurrentUser();
+            if (user.uid !== userId) {
+                throw new Error('Invalid userId for loadUserProgress');
+            }
             
-            const progressRef = ref(database, `user_game_data/${user.uid}/${gameId}`);
+            const progressRef = ref(database, `user_game_data/${userId}/${gameId}`);
             const snapshot = await get(progressRef);
             
             if (snapshot.exists()) {
@@ -95,15 +102,19 @@ export class PersistenceManager {
             }
 
             // Jika tidak ada progres, ambil default schema dari game
-            const gameData = await this.loadGame(gameId);
-            return gameData.playerSchema || {};
+            try {
+                const gameData = await this.loadGame(gameId, { silent: true });
+                return gameData.playerSchema || {};
+            } catch {
+                return {};
+            }
         } catch (error) {
             console.error("Progress Load Error:", error);
             throw error;
         }
     }
 
-    public async loadGame(gameId: string): Promise<any> {
+    public async loadGame(gameId: string, options?: { silent?: boolean }): Promise<any> {
         try {
             const gameRef = ref(database, `games/${gameId}`);
             const snapshot = await get(gameRef);
@@ -121,8 +132,10 @@ export class PersistenceManager {
             eventBus.emit('db:loaded', { id: gameId, data });
             return data;
         } catch (error) {
-            console.error("Database Load Error:", error);
-            eventBus.emit('db:error', { operation: 'load', error });
+            if (!options?.silent) {
+                console.error("Database Load Error:", error);
+                eventBus.emit('db:error', { operation: 'load', error });
+            }
             throw error;
         }
     }

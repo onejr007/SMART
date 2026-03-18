@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from './AuthContext';
-import { UserRole } from './store';
+import { useStore } from './store';
 import './Navbar.css';
 
 interface NavbarProps {
@@ -9,11 +8,8 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentView }) => {
-    const { user, logout } = useAuth();
+    const { user, logout } = useStore();
     const [showDropdown, setShowDropdown] = useState(false);
-
-    // Security Recommendation #1: RBAC Check
-    const canCreate = user?.role === UserRole.ADMIN || user?.role === UserRole.CREATOR;
 
     const handleLogout = async () => {
         try {
@@ -40,15 +36,13 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentView }) => {
                         <span>Home</span>
                     </button>
                     
-                    {canCreate && (
-                        <button 
-                            className={`nav-button ${currentView === 'create' ? 'active' : ''}`}
-                            onClick={() => onNavigate('create')}
-                        >
-                            <span className="nav-icon">✨</span>
-                            <span>Create</span>
-                        </button>
-                    )}
+                    <button 
+                        className={`nav-button nav-button-primary ${currentView === 'create' ? 'active' : ''}`}
+                        onClick={() => onNavigate('create')}
+                    >
+                        <span className="nav-icon">✨</span>
+                        <span>Create Game</span>
+                    </button>
                 </div>
 
                 <div className="navbar-user">

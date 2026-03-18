@@ -1,0 +1,156 @@
+.gv-root {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.gv-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+}
+/* Overlay base */
+.gv-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+/* Loading */
+.gv-loading { background: #0c0c10; gap: 14px; }
+.gv-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: gv-spin 0.8s linear infinite;
+}
+@keyframes gv-spin { to { transform: rotate(360deg); } }
+.gv-load-title { color: rgba(255,255,255,0.85); font-size: 1rem; font-weight: 600; margin: 0; }
+.gv-load-sub { color: rgba(255,255,255,0.35); font-size: 0.82rem; margin: 0; }
+/* Click to play */
+.gv-click-play {
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(6px);
+    cursor: pointer;
+    animation: gv-fade 0.3s ease;
+}
+@keyframes gv-fade { from { opacity: 0; } to { opacity: 1; } }
+.gv-play-card {
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    padding: 36px 52px;
+    background: rgba(12,12,18,0.92);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+.gv-click-play:hover .gv-play-card { transform: scale(1.02); }
+.gv-play-icon {
+    width: 54px; height: 54px; border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; color: white;
+    box-shadow: 0 0 28px rgba(99,102,241,0.45);
+}
+.gv-play-title { color: rgba(255,255,255,0.9); font-size: 1.05rem; font-weight: 600; margin: 0; }
+.gv-play-sub { color: rgba(255,255,255,0.38); font-size: 0.8rem; margin: 0; }
+/* HUD positions */
+.gv-hud-tl {
+    position: absolute; top: 16px; left: 16px;
+    display: flex; align-items: center; gap: 8px; z-index: 40;
+}
+.gv-hud-tr {
+    position: absolute; top: 16px; right: 16px;
+    display: flex; align-items: center; gap: 8px; z-index: 40;
+}
+/* Buttons */
+.gv-btn {
+    padding: 7px 13px;
+    background: rgba(10,10,16,0.85);
+    border: 1px solid rgba(255,255,255,0.11);
+    border-radius: 8px;
+    color: rgba(255,255,255,0.8);
+    font-size: 0.83rem; font-weight: 500;
+    cursor: pointer; backdrop-filter: blur(14px);
+    transition: all 0.15s ease; white-space: nowrap;
+    font-family: inherit;
+}
+.gv-btn:hover { background: rgba(25,25,35,0.9); border-color: rgba(255,255,255,0.18); color: white; }
+.gv-btn-exit:hover { border-color: rgba(239,68,68,0.5); color: #f87171; }
+.gv-btn-on { background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.45); color: #a5b4fc; }
+.gv-btn-rec { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4); color: #fca5a5; }
+/* Score */
+.gv-score {
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 13px;
+    background: rgba(10,10,16,0.85); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; backdrop-filter: blur(14px);
+}
+.gv-score-lbl { font-size: 0.68rem; font-weight: 700; color: rgba(255,255,255,0.38); letter-spacing: 0.08em; }
+.gv-score-val { font-size: 0.95rem; font-weight: 700; color: white; font-variant-numeric: tabular-nums; }
+/* REC badge */
+.gv-rec-badge {
+    padding: 7px 11px;
+    background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px; color: #fca5a5; font-size: 0.75rem; font-weight: 700;
+    animation: gv-blink 1.2s ease-in-out infinite;
+}
+@keyframes gv-blink { 0%,100% { opacity:1; } 50% { opacity:0.45; } }
+/* Controls hint */
+.gv-controls {
+    position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 7px;
+    padding: 8px 16px;
+    background: rgba(10,10,16,0.78); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; color: rgba(255,255,255,0.42); font-size: 0.77rem;
+    backdrop-filter: blur(14px); z-index: 40; white-space: nowrap;
+}
+.gv-controls kbd {
+    background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px; padding: 1px 5px; color: rgba(255,255,255,0.72);
+    font-size: 0.72rem; font-weight: 600; font-family: inherit;
+}
+.gv-dot { color: rgba(255,255,255,0.2); }
+/* Modal */
+.gv-modal-bg {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.65); backdrop-filter: blur(8px);
+    z-index: 60; animation: gv-fade 0.2s ease;
+}
+.gv-modal {
+    width: min(380px, calc(100vw - 32px));
+    background: rgba(13,13,20,0.98); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.7);
+}
+.gv-modal-hd {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 16px; border-bottom: 1px solid rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.88); font-weight: 600; font-size: 0.92rem;
+}
+.gv-modal-x {
+    background: none; border: none; color: rgba(255,255,255,0.38);
+    font-size: 15px; cursor: pointer; padding: 3px; border-radius: 4px;
+    transition: color 0.15s;
+}
+.gv-modal-x:hover { color: rgba(255,255,255,0.75); }
+.gv-modal-bd { padding: 10px; }
+.gv-lb-empty { text-align: center; padding: 28px; color: rgba(255,255,255,0.32); font-size: 0.88rem; }
+.gv-lb-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 11px; border-radius: 7px;
+    background: rgba(255,255,255,0.03); margin-bottom: 3px;
+    transition: background 0.15s;
+}
+.gv-lb-row:hover { background: rgba(255,255,255,0.06); }
+.gv-lb-me { background: rgba(99,102,241,0.1) !important; border: 1px solid rgba(99,102,241,0.22); }
+.gv-lb-rank { width: 26px; font-size: 0.78rem; font-weight: 700; color: rgba(255,255,255,0.32); }
+.gv-lb-user { flex: 1; font-size: 0.86rem; color: rgba(255,255,255,0.65); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gv-lb-me .gv-lb-user { color: #a5b4fc; }
+.gv-lb-score { font-size: 0.92rem; font-weight: 700; color: rgba(255,255,255,0.88); font-variant-numeric: tabular-nums; }

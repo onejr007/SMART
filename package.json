@@ -1,15 +1,17 @@
 {
   "name": "smart-metaverse-portal",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Standalone Firebase Game Portal & Multiverse Engine for web-based 3D games",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "start": "vite preview",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && firebase deploy --only hosting",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "deploy:database": "firebase use smart-34bcc && firebase deploy --only database",
+    "deploy:hosting": "firebase use smart-34bcc && firebase deploy --only hosting",
+    "deploy": "npm run build && firebase use smart-34bcc && firebase deploy --only database,hosting"
   },
   "dependencies": {
     "cannon-es": "^0.20.0",

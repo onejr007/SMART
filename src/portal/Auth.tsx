@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from './AuthContext';
+import { useStore } from './store';
 import './Auth.css';
 
 interface AuthProps {
@@ -14,7 +14,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const { signup, login } = useAuth();
+    const { signup, login } = useStore();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

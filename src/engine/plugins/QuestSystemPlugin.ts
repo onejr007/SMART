@@ -22,7 +22,7 @@ export class QuestSystemPlugin implements Plugin {
         console.log('[QuestSystem] Plugin initialized.');
         
         // Listen for objective triggers
-        eventBus.on('trigger:enter', (data) => {
+        eventBus.on('trigger:enter', (data: any) => {
             this.onObjectiveTrigger(data.trigger.name);
         });
     }

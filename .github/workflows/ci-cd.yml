@@ -56,7 +56,7 @@ jobs:
           retention-days: 7
 
   deploy-database-rules:
-    name: Deploy Database Rules (jbakun-62239)
+    name: Deploy Database Rules (smart-34bcc)
     needs: test-and-build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -75,9 +75,9 @@ jobs:
 
       - name: Deploy Database Rules
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN_JBAKUN }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN_SMART }}
         run: |
-          firebase deploy --only database --project jbakun-62239 --token "$FIREBASE_TOKEN" --non-interactive
+          firebase deploy --only database --project smart-34bcc --token "$FIREBASE_TOKEN" --non-interactive
 
   deploy-hosting:
     name: Deploy Hosting (smart-34bcc)

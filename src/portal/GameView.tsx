@@ -1,141 +1,196 @@
-import React, { useEffect, useRef } from 'react';
-import { Engine } from '../engine/Core';
-import { Entity } from '../engine/Entity';
-import { FPSController } from '../engine/Controller';
-import { InputManager } from '../engine/Input';
-import { PlayerStats } from '../engine/components/PlayerStats';
-import { useAuth } from './AuthContext';
-import * as THREE from 'three';
-import { Game } from './App';
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { Game } from "./App";
+import { GameFacade } from "./GameFacade";
+import { useStore } from "./store";
+import { LeaderboardEntry } from "../engine/LeaderboardManager";
+import { useOverlay } from "./ui/OverlayProvider";
+import "./GameView.css";
 
 interface GameViewProps {
-    game: Game;
-    onExit: () => void;
+  game: Game;
+  onExit: () => void;
 }
 
 const GameView: React.FC<GameViewProps> = ({ game, onExit }) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const engineRef = useRef<Engine | null>(null);
-    const inputRef = useRef<InputManager | null>(null);
-    const { user } = useAuth();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const facadeRef = useRef<GameFacade | null>(null);
+  const { user } = useStore();
+  const overlay = useOverlay();
+  const [score, setScore] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>(
+    [],
+  );
+  const [isRecording, setIsRecording] = useState(false);
 
-    useEffect(() => {
-        if (!canvasRef.current) return;
-
-        // Initialize Engine
-        const engine = new Engine(canvasRef.current);
-        engineRef.current = engine;
-        
-        // Initialize Input
-        const input = new InputManager();
-        inputRef.current = input;
-
-        // Initialize Player Controller
-        const controller = new FPSController(engine.getCamera(), canvasRef.current);
-        const playerBody = controller.getBody();
-        engine.getPhysicsWorld().addBody(playerBody);
-        
-        const playerObject = controller.getObject();
-        engine.getScene().add(playerObject);
-
-        // Add Player Stats Component
-        if (user && game.id) {
-            // Find or create an entity for the player to attach components
-            const playerEntity = new Entity({
-                position: engine.getCamera().position.clone(),
-                name: 'Player'
-            });
-            // Link controller body and mesh to the entity
-            playerEntity.body = playerBody;
-            playerEntity.mesh = playerObject;
-            
-            const stats = new PlayerStats(user.displayName, game.id);
-            playerEntity.addComponent(stats);
-            engine.addEntity(playerEntity);
-        }
-
-        // Game Loop Hook
-        engine.onUpdate((delta) => {
-            controller.update(delta, input);
-        });
-
-        // Load Game Scene based on ID or game data
-        loadGameScene(engine, game);
-
-        // Start Engine
-        engine.start();
-
-        // Cleanup
-        return () => {
-            engine.stop();
-            // Dispose logic would go here
-        };
-    }, [game]);
-
-    const loadGameScene = (engine: Engine, gameData: Game) => {
-        if (gameData.scene && gameData.scene.length > 0) {
-            // Load UGC Scene
-            gameData.scene.forEach((entData: any) => {
-                const entity = new Entity({
-                    position: new THREE.Vector3(entData.position.x, entData.position.y, entData.position.z),
-                    rotation: new THREE.Euler(entData.rotation.x, entData.rotation.y, entData.rotation.z),
-                    size: new THREE.Vector3(entData.scale.x, entData.scale.y, entData.scale.z),
-                    mass: entData.mass > 0 ? entData.mass : 1, // Make it dynamic when playing
-                    name: entData.name,
-                    color: entData.name === 'EditorFloor' ? 0x333333 : Math.random() * 0xffffff
-                });
-                
-                // If it's a floor, keep it static
-                if (entData.name === 'EditorFloor') {
-                    entity.body.mass = 0;
-                    entity.body.updateMassProperties();
-                }
-
-                engine.addEntity(entity);
-            });
-        } else {
-            // Default Procedural Scene (For older static games)
-            const floor = new Entity({
-                position: new THREE.Vector3(0, -1, 0),
-                size: new THREE.Vector3(50, 1, 50),
-                mass: 0, // Static
-                color: 0x228B22,
-                name: 'Floor'
-            });
-            engine.addEntity(floor);
-
-            for (let i = 0; i < 20; i++) {
-                const box = new Entity({
-                    position: new THREE.Vector3(Math.random() * 20 - 10, 5 + i * 2, Math.random() * 20 - 10),
-                    size: new THREE.Vector3(1, 1, 1),
-                    mass: 1,
-                    color: Math.random() * 0xffffff,
-                    name: `Box_${i}`
-                });
-                engine.addEntity(box);
-            }
-        }
+  useEffect(() => {
+    if (!canvasRef.current || !user) return;
+    const facade = new GameFacade(canvasRef.current, game, user);
+    facadeRef.current = facade;
+    const eb = facade.getEventBus();
+    const onScore = (n: number) => setScore((p) => p + n);
+    eb.on("scoreUpdated", onScore);
+    facade
+      .start()
+      .catch((e) => console.warn("Engine start error:", e))
+      .finally(() => setIsLoading(false));
+    const t = setTimeout(() => setIsLoading(false), 2000);
+    const onLock = () =>
+      setIsLocked(document.pointerLockElement === canvasRef.current);
+    document.addEventListener("pointerlockchange", onLock);
+    return () => {
+      facade.stop();
+      eb.off("scoreUpdated", onScore);
+      document.removeEventListener("pointerlockchange", onLock);
+      clearTimeout(t);
+      facadeRef.current = null;
     };
+  }, [game, user]);
 
-    return (
-        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-            <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />
-            
-            <div style={{ position: 'absolute', top: '20px', left: '20px', background: 'rgba(0,0,0,0.5)', padding: '10px', borderRadius: '8px', color: 'white' }}>
-                <h2 style={{ margin: '0 0 5px 0' }}>{game.title}</h2>
-                <button onClick={onExit} style={{ background: '#ff4444', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>
-                    Exit Game
-                </button>
-            </div>
+  const handleCanvasClick = useCallback(() => {
+    if (canvasRef.current && !isLocked) canvasRef.current.requestPointerLock();
+  }, [isLocked]);
 
-            <div style={{ position: 'absolute', bottom: '20px', left: '20px', color: 'rgba(255,255,255,0.7)', pointerEvents: 'none' }}>
-                <b>Controls:</b><br/>
-                WASD - Move<br/>
-                Space - Jump<br/>
-                Click - Lock Mouse
-            </div>
+  const handleLeaderboard = async () => {
+    const next = !showLeaderboard;
+    if (next && facadeRef.current) {
+      const data = await facadeRef.current.toggleLeaderboard(true, game.id);
+      setLeaderboardData(data);
+    }
+    setShowLeaderboard(next);
+  };
+
+  const handleSubmit = async () => {
+    if (facadeRef.current && user) {
+      await facadeRef.current.submitScore(game.id, user.uid, score);
+      overlay.toast(`Score ${score} submitted!`, { variant: "success" });
+    }
+  };
+
+  const handleRecord = () => {
+    if (facadeRef.current) {
+      const rec = facadeRef.current.toggleRecording(isRecording);
+      setIsRecording(rec);
+      overlay.toast(rec ? "Recording..." : "Replay saved", {
+        variant: rec ? "info" : "success",
+      });
+    }
+  };
+
+  return (
+    <div className="gv-root">
+      <canvas
+        ref={canvasRef}
+        className="gv-canvas"
+        onClick={handleCanvasClick}
+      />
+
+      {isLoading && (
+        <div className="gv-overlay gv-loading">
+          <div className="gv-spinner" />
+          <p className="gv-load-title">{game.title}</p>
+          <p className="gv-load-sub">Loading world…</p>
         </div>
-    );
+      )}
+
+      {!isLoading && !isLocked && (
+        <div className="gv-overlay gv-click-play" onClick={handleCanvasClick}>
+          <div className="gv-play-card">
+            <div className="gv-play-icon">▶</div>
+            <p className="gv-play-title">Click to Play</p>
+            <p className="gv-play-sub">Lock mouse to start · ESC to release</p>
+          </div>
+        </div>
+      )}
+
+      {!isLoading && (
+        <>
+          <div className="gv-hud-tl">
+            <button className="gv-btn gv-btn-exit" onClick={onExit}>
+              ← Exit
+            </button>
+            <div className="gv-score">
+              <span className="gv-score-lbl">SCORE</span>
+              <span className="gv-score-val">{score}</span>
+            </div>
+            {isRecording && <div className="gv-rec-badge">⏺ REC</div>}
+          </div>
+
+          <div className="gv-hud-tr">
+            <button
+              className={`gv-btn ${showLeaderboard ? "gv-btn-on" : ""}`}
+              onClick={handleLeaderboard}
+            >
+              🏆
+            </button>
+            <button className="gv-btn" onClick={handleSubmit}>
+              Submit
+            </button>
+            <button
+              className={`gv-btn ${isRecording ? "gv-btn-rec" : ""}`}
+              onClick={handleRecord}
+            >
+              {isRecording ? "⏹" : "⏺"}
+            </button>
+          </div>
+
+          <div className="gv-controls">
+            <kbd>WASD</kbd> Move
+            <span className="gv-dot">·</span>
+            <kbd>SPACE</kbd> Jump
+            <span className="gv-dot">·</span>
+            <kbd>E</kbd> Interact
+            <span className="gv-dot">·</span>
+            <kbd>Q</kbd> Throw
+            {isLocked && (
+              <>
+                <span className="gv-dot">·</span>
+                <kbd>ESC</kbd> Unlock
+              </>
+            )}
+          </div>
+        </>
+      )}
+
+      {showLeaderboard && (
+        <div className="gv-modal-bg" onClick={() => setShowLeaderboard(false)}>
+          <div className="gv-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="gv-modal-hd">
+              <span>🏆 Leaderboard — {game.title}</span>
+              <button
+                className="gv-modal-x"
+                onClick={() => setShowLeaderboard(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="gv-modal-bd">
+              {leaderboardData.length === 0 ? (
+                <div className="gv-lb-empty">No scores yet. Be the first!</div>
+              ) : (
+                leaderboardData.map((e, i) => (
+                  <div
+                    key={i}
+                    className={`gv-lb-row ${e.userId === user?.uid ? "gv-lb-me" : ""}`}
+                  >
+                    <span className="gv-lb-rank">#{i + 1}</span>
+                    <span className="gv-lb-user">
+                      {e.userId === user?.uid
+                        ? "You"
+                        : e.userId.slice(0, 8) + "…"}
+                    </span>
+                    <span className="gv-lb-score">{e.score}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default GameView;

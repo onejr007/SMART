@@ -5,8 +5,8 @@ import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 
 // Firebase configuration
-// Using smart-34bcc for Auth & Analytics
-// Using jbakun-62239 for Realtime Database
+// Using smart-34bcc for EVERYTHING (Hosting, Auth, Database, Analytics)
+// NOTE: If you want to use jbakun-62239 database, both projects MUST be in the SAME Google account
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDI0fFGqzZgGMah6SqWBqXY3Dequ3l293g",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "smart-34bcc.firebaseapp.com",
@@ -15,8 +15,8 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "543264870207",
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:543264870207:web:cbb04de066be95f72f0d8a",
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-TMKGJSX721",
-  // Database URL from jbakun-62239
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://jbakun-62239-default-rtdb.asia-southeast1.firebasedatabase.app"
+  // Database URL - using smart-34bcc database (same project)
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://smart-34bcc-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
 
 // Initialize Firebase

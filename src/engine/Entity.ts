@@ -15,6 +15,7 @@ import {
 import { assetManager } from './AssetManager';
 import { eventBus } from './EventBus';
 import { Component } from './Component';
+import { uuidManager } from './UUIDManager';
 
 export interface LODLevel {
     modelUrl: string;
@@ -33,6 +34,7 @@ export interface EntityProps {
 }
 
 export class Entity {
+    public uuid: string; // Stable UUID for network/save
     public mesh: Object3D; // Changed to Object3D to support complex models
     public lod?: LOD;
     public body: Body;
@@ -42,6 +44,9 @@ export class Entity {
     
     constructor(props: EntityProps) {
         this.name = props.name || 'Entity';
+        
+        // Register UUID for stable identification
+        this.uuid = uuidManager.register(this.name);
         
         // Base container for the mesh
         this.mesh = new Object3D();
@@ -153,6 +158,7 @@ export class Entity {
     // Helper for Serialization
     public toJSON() {
         return {
+            uuid: this.uuid,
             name: this.name,
             position: { x: this.mesh.position.x, y: this.mesh.position.y, z: this.mesh.position.z },
             rotation: { x: this.mesh.rotation.x, y: this.mesh.rotation.y, z: this.mesh.rotation.z },

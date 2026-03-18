@@ -65,7 +65,7 @@ export class VisualScripting extends Component {
 
     public onAttach(): void {
         // Example: Setup listeners for trigger events if nodes exist
-        eventBus.on('trigger:enter', (data) => {
+        eventBus.on('trigger:enter', (data: any) => {
             if (data.trigger === this.entity) {
                 this.triggerNodesByType('ON_TRIGGER_ENTER');
             }

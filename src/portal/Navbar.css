@@ -75,6 +75,21 @@
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
+.nav-button-primary {
+    background: rgba(102, 126, 234, 0.15);
+    border: 1px solid rgba(102, 126, 234, 0.35);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.nav-button-primary:hover {
+    background: rgba(102, 126, 234, 0.25);
+    border-color: rgba(102, 126, 234, 0.55);
+}
+
+.nav-button.nav-button-primary.active {
+    border-color: transparent;
+}
+
 .nav-icon {
     font-size: 1.2rem;
 }

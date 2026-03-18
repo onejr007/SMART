@@ -1,57 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Game } from './App';
-import { persistence } from '../engine/PersistenceManager';
-import { useAuth } from './AuthContext';
 import { useStore } from './store';
+import { useGames } from './useGames';
 import './GameList.css';
 
 interface GameListProps {
     onPlay: (game: Game) => void;
+    onCreate: () => void;
 }
 
-const defaultGames: Game[] = [
-    {
-        id: '1',
-        title: 'Cyber City Explorer',
-        description: 'Explore a neon-lit cyberpunk city. Use WASD to move.',
-        author: 'AI Architect',
-    }
-];
-
-const GameList: React.FC<GameListProps> = ({ onPlay }) => {
-    // Optimization #45: Global State Optimization (Zustand)
-    const { games: allGames, setGames: setAllGames, prefetchGame } = useStore();
-    const [isLoading, setIsLoading] = useState(allGames.length === 0);
+const GameList: React.FC<GameListProps> = ({ onPlay, onCreate }) => {
+    const { games: allGames, isLoading } = useGames();
+    const { prefetchGame, user } = useStore();
     const [filter, setFilter] = useState<'all' | 'mine'>('all');
-    const { user } = useAuth();
+    const [search, setSearch] = useState('');
 
-    useEffect(() => {
-        const fetchGames = async () => {
-            try {
-                const ugcGames = await persistence.listGames();
-                // Combine with default and sort by date
-                const combined = [...defaultGames, ...ugcGames].sort((a, b) => {
-                    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-                    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-                    return dateB - dateA;
-                });
-                setAllGames(combined);
-            } catch (error) {
-                console.error("Error fetching games:", error);
-                if (allGames.length === 0) setAllGames(defaultGames);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchGames();
-    }, [setAllGames]);
-
-    const filteredGames = filter === 'mine' 
+    const normalizedSearch = search.trim().toLowerCase();
+    const baseGames = filter === 'mine' 
         ? allGames.filter(game => game.author === user?.displayName)
         : allGames;
+    const filteredGames = normalizedSearch.length === 0
+        ? baseGames
+        : baseGames.filter((game) => {
+            const haystack = `${game.title} ${game.description} ${game.author}`.toLowerCase();
+            return haystack.includes(normalizedSearch);
+        });
 
-    // Optimization #40: Prefetching Strategy
     const handleMouseEnter = useCallback((gameId: string) => {
         prefetchGame(gameId);
     }, [prefetchGame]);
@@ -59,32 +33,51 @@ const GameList: React.FC<GameListProps> = ({ onPlay }) => {
     return (
         <div className="game-list-container">
             <div className="game-list-header">
-                <div className="header-content">
-                    <h1 className="header-title">Discover Worlds</h1>
-                    <p className="header-subtitle">
-                        Explore amazing 3D experiences created by our community
-                    </p>
+                <div className="header-top">
+                    <div className="header-content">
+                        <h1 className="header-title">Discover Worlds</h1>
+                        <p className="header-subtitle">
+                            Explore amazing 3D experiences created by our community
+                        </p>
+                    </div>
+
+                    <button className="create-game-button" onClick={onCreate}>
+                        <span className="create-game-icon">✨</span>
+                        <span>Create Game</span>
+                    </button>
                 </div>
 
-                <div className="filter-tabs">
-                    <button 
-                        className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
-                        onClick={() => setFilter('all')}
-                    >
-                        <span>🌍</span>
-                        <span>All Games</span>
-                        <span className="badge">{allGames.length}</span>
-                    </button>
-                    <button 
-                        className={`filter-tab ${filter === 'mine' ? 'active' : ''}`}
-                        onClick={() => setFilter('mine')}
-                    >
-                        <span>⭐</span>
-                        <span>My Games</span>
-                        <span className="badge">
-                            {allGames.filter(g => g.author === user?.displayName).length}
-                        </span>
-                    </button>
+                <div className="header-controls">
+                    <div className="filter-tabs">
+                        <button 
+                            className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
+                            onClick={() => setFilter('all')}
+                        >
+                            <span>🌍</span>
+                            <span>All Games</span>
+                            <span className="badge">{allGames.length}</span>
+                        </button>
+                        <button 
+                            className={`filter-tab ${filter === 'mine' ? 'active' : ''}`}
+                            onClick={() => setFilter('mine')}
+                        >
+                            <span>⭐</span>
+                            <span>My Games</span>
+                            <span className="badge">
+                                {allGames.filter(g => g.author === user?.displayName).length}
+                            </span>
+                        </button>
+                    </div>
+
+                    <div className="search-wrap">
+                        <span className="search-icon">🔎</span>
+                        <input
+                            className="search-input"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search games..."
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -99,9 +92,13 @@ const GameList: React.FC<GameListProps> = ({ onPlay }) => {
                     <h3>No games found</h3>
                     <p>
                         {filter === 'mine' 
-                            ? "You haven't created any games yet. Click 'Create' to start building!"
+                            ? "You haven't created any games yet. Create your first world to get started."
                             : "No games available at the moment."}
                     </p>
+                    <button className="empty-create-button" onClick={onCreate}>
+                        <span>✨</span>
+                        <span>Create Game</span>
+                    </button>
                 </div>
             ) : (
                 <div className="games-grid">
@@ -131,7 +128,7 @@ const GameList: React.FC<GameListProps> = ({ onPlay }) => {
                                         <div className="author-avatar">
                                             {game.author.charAt(0).toUpperCase()}
                                         </div>
-                                        <span className="author-name">
+                                <span className="author-name">
                                             {game.author === user?.displayName ? 'You' : game.author}
                                         </span>
                                     </div>
@@ -145,6 +142,9 @@ const GameList: React.FC<GameListProps> = ({ onPlay }) => {
                     ))}
                 </div>
             )}
+            <button className="create-game-fab" onClick={onCreate} aria-label="Create Game">
+                ✨
+            </button>
         </div>
     );
 };
